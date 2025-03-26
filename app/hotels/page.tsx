@@ -144,13 +144,13 @@ function CreateHotel() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Create New Hotel</h1>
-        <div className="flex items-center gap-4">
+    <div className="container py-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-0">Create New Hotel</h1>
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="px-4 py-2 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+            className="btn btn-primary flex-1 md:flex-none flex items-center justify-center gap-2"
           >
             <FaFileUpload className="text-lg" />
             Upload File
@@ -177,73 +177,63 @@ function CreateHotel() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="card space-y-6">
         {/* Hotel Name */}
-              <div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
-                <input
-                  type="text"
+          <input
+            type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-                  placeholder="Enter hotel name"
-                />
+            className={`input ${errors.name ? 'border-red-500' : ''}`}
+            placeholder="Enter hotel name"
+          />
           {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
-              </div>
+        </div>
 
         {/* Location */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Location</label>
           <div className="flex items-center gap-2">
             <IoLocationOutline className="text-gray-400" />
-                <input
-                  type="text"
+            <input
+              type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.address ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.address ? 'border-red-500' : ''}`}
               placeholder="Address"
-                />
-              </div>
+            />
+          </div>
           {errors.address && <p className="mt-1 text-sm text-red-500">{errors.address}</p>}
           
-          <div className="grid grid-cols-3 gap-2">
-                <input
-                  type="text"
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input
+              type="text"
               name="city"
               value={formData.city}
               onChange={handleChange}
-              className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.city ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.city ? 'border-red-500' : ''}`}
               placeholder="City"
             />
-                <input
-                  type="text"
+            <input
+              type="text"
               name="state"
               value={formData.state}
               onChange={handleChange}
-              className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.state ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.state ? 'border-red-500' : ''}`}
               placeholder="State"
             />
-                <input
-                  type="text"
+            <input
+              type="text"
               name="country"
               value={formData.country}
               onChange={handleChange}
-              className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.country ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.country ? 'border-red-500' : ''}`}
               placeholder="Country"
-                />
-              </div>
+            />
+          </div>
         </div>
 
         {/* Contact Information */}
@@ -251,85 +241,75 @@ function CreateHotel() {
           <label className="block text-sm font-medium text-gray-700">Contact Information</label>
           <div className="flex items-center gap-2">
             <MdPhone className="text-gray-400" />
-                <input
-                  type="text"
+            <input
+              type="text"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.phone ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.phone ? 'border-red-500' : ''}`}
               placeholder="Phone number"
-                />
-              </div>
+            />
+          </div>
           {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
 
           <div className="flex items-center gap-2">
             <MdEmail className="text-gray-400" />
-                <input
-                  type="email"
+            <input
+              type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.email ? 'border-red-500' : ''}`}
               placeholder="Email"
-                />
-              </div>
+            />
+          </div>
           {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
 
           <div className="flex items-center gap-2">
             <MdLanguage className="text-gray-400" />
-                <input
-                  type="text"
+            <input
+              type="text"
               name="website"
               value={formData.website}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.website ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`input ${errors.website ? 'border-red-500' : ''}`}
               placeholder="Website"
-                />
-              </div>
+            />
+          </div>
           {errors.website && <p className="mt-1 text-sm text-red-500">{errors.website}</p>}
         </div>
 
         {/* Price and Rating */}
-        <div className="grid grid-cols-2 gap-4">
-              <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night</label>
             <div className="flex items-center gap-2">
               <BsCurrencyDollar className="text-gray-400" />
-                <input
-                  type="number"
+              <input
+                type="number"
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
-                }`}
-                  placeholder="Enter price"
-                />
-              </div>
+                className={`input ${errors.price ? 'border-red-500' : ''}`}
+                placeholder="Enter price"
+              />
+            </div>
             {errors.price && <p className="mt-1 text-sm text-red-500">{errors.price}</p>}
           </div>
 
-              <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
             <div className="flex items-center gap-2">
               <AiFillStar className="text-yellow-400" />
-                <input
-                  type="number"
+              <input
+                type="number"
                 name="rating"
                 value={formData.rating}
                 onChange={handleChange}
                 min="0"
-                  max="5"
-                  step="0.1"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.rating ? 'border-red-500' : 'border-gray-300'
-                }`}
+                max="5"
+                step="0.1"
+                className={`input ${errors.rating ? 'border-red-500' : ''}`}
                 placeholder="Enter rating (0-5)"
               />
             </div>
@@ -345,32 +325,30 @@ function CreateHotel() {
             value={formData.description}
             onChange={handleChange}
             rows={4}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`input ${errors.description ? 'border-red-500' : ''}`}
             placeholder="Enter hotel description"
           />
           {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
           <button
             type="button"
             onClick={() => router.push('/listHotels')}
-            className="px-6 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            className="btn btn-secondary w-full sm:w-auto"
           >
             Cancel
           </button>
-              <button
-                type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
-              >
+          <button
+            type="submit"
+            className="btn btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
+          >
             <FaCloudUploadAlt />
-                Create Hotel
-              </button>
-            </div>
-          </form>
+            Create Hotel
+          </button>
+        </div>
+      </form>
 
       <UploadModal
         isOpen={isUploadModalOpen}
