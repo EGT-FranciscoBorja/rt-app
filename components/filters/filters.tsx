@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
-import { FaFilter, FaTimes, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
 import { MdEmail, MdPhone, MdLanguage } from "react-icons/md";
 import { BsCurrencyDollar } from "react-icons/bs";
 import { AiFillStar } from "react-icons/ai";
 
+interface FilterValues {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  phone: string;
+  email: string;
+  website: string;
+  priceMin: string;
+  priceMax: string;
+  rating: string;
+}
+
 interface FiltersProps {
-  onApplyFilters: (filters: any) => void;
+  onApplyFilters: (filters: FilterValues) => void;
 }
 
 function Filters({ onApplyFilters }: FiltersProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterValues>({
     name: '',
     address: '',
     city: '',
