@@ -4,20 +4,19 @@ import { useState } from 'react'
 import { FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 
 interface CruiseFiltersProps {
-  filters: {
-    search: string
-    destination: string
-    minPrice: string
-    maxPrice: string
-    minDuration: string
-    maxDuration: string
-    minCapacity: string
-    maxCapacity: string
-  }
-  onFilterChange: (filters: any) => void
+  onApplyFilters: (filters: CruiseFilters) => void;
 }
 
-export default function CruiseFilters({ filters, onFilterChange }: CruiseFiltersProps) {
+interface CruiseFilters {
+  name: string;
+  category: string;
+  priceMin: string;
+  priceMax: string;
+  capacityMin: string;
+  capacityMax: string;
+}
+
+export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
   const [isOpen, setIsOpen] = useState(true)
 
   return (

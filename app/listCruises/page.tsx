@@ -135,7 +135,7 @@ export default function ListCruisesPage() {
     const halfMaxPages = Math.floor(maxVisiblePages / 2)
 
     let startPage = Math.max(1, pagination.current_page - halfMaxPages)
-    let endPage = Math.min(pagination.last_page, startPage + maxVisiblePages - 1)
+    const endPage = Math.min(pagination.last_page, startPage + maxVisiblePages - 1)
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1)
@@ -200,7 +200,7 @@ export default function ListCruisesPage() {
             <h2 className="text-lg font-semibold mb-4">Filters</h2>
             
             {/* Active Filters Display */}
-            {Object.entries(activeFilters).some(([_, value]) => value) && (
+            {Object.entries(activeFilters).some(([, value]) => value) && (
               <div className="mb-4 p-2 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600 mb-2">Active Filters:</p>
                 <div className="flex flex-wrap gap-2">
