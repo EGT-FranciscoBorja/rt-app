@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
   const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
@@ -13,7 +13,7 @@ export async function PUT(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/v1/cruise/${params.id}`, {
+    const response = await fetch(`${apiUrl}/api/v1/cruise/${context.params.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -32,8 +32,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
   const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
@@ -43,7 +43,7 @@ export async function DELETE(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/v1/cruise/${params.id}`, {
+    const response = await fetch(`${apiUrl}/api/v1/cruise/${context.params.id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

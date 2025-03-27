@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
   const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
 
