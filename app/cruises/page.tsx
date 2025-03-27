@@ -6,12 +6,23 @@ import { FaCloudUploadAlt, FaFileUpload, FaTimes } from 'react-icons/fa'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchCruises, selectCruisesStatus } from '../features/cruises/cruisesSlice'
 import UploadModal from '@/components/UploadModal'
+import { handleCreateCruise, handleFileUpload } from './actions'
 
 export default function CruisesPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const status = useAppSelector(selectCruisesStatus)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    website: '',
+    capacity: '',
+    base_price: '',
+    category: '',
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'idle') {
@@ -19,9 +30,61 @@ export default function CruisesPage() {
     }
   }, [status, dispatch])
 
-  const handleFileUpload = async (file: File) => {
-    // Implementar lógica de carga de archivo
-    console.log('File uploaded:', file)
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      // Asegurarnos de que los valores numéricos sean números válidos
+      const capacity = parseInt(formData.capacity)
+      const basePrice = parseFloat(formData.base_price)
+      const category = parseInt(formData.category)
+
+      if (isNaN(capacity) || isNaN(basePrice) || isNaN(category)) {
+        throw new Error('Por favor, ingrese valores numéricos válidos')
+      }
+
+      const cruiseData = {
+        name: formData.name,
+        description: formData.description,
+        website: formData.website,
+        capacity: capacity,
+        base_price: basePrice,
+        category: category,
+      }
+
+      console.log('Enviando datos:', cruiseData) // Para debugging
+
+      await handleCreateCruise(cruiseData)
+      dispatch(fetchCruises())
+      router.push('/listCruises')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear el crucero. Por favor, intente nuevamente.')
+      console.error('Error creating cruise:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleFileUploadSubmit = async (file: File) => {
+    try {
+      await handleFileUpload(file)
+      dispatch(fetchCruises())
+      setIsUploadModalOpen(false)
+    } catch (err) {
+      console.error('Error uploading file:', err)
+    }
   }
 
   return (
@@ -58,79 +121,24 @@ export default function CruisesPage() {
         </p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} className="card space-y-6">
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="card space-y-6">
         {/* Cruise Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Cruise Name</label>
           <input
             type="text"
             name="name"
+            value={formData.name}
+            onChange={handleInputChange}
             className="input"
             placeholder="Enter cruise name"
-          />
-        </div>
-
-        {/* Destination */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-          <input
-            type="text"
-            name="destination"
-            className="input"
-            placeholder="Enter destination"
-          />
-        </div>
-
-        {/* Duration */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-          <input
-            type="text"
-            name="duration"
-            className="input"
-            placeholder="Enter duration (e.g., 7 days)"
-          />
-        </div>
-
-        {/* Price */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price per Person</label>
-          <input
-            type="number"
-            name="price"
-            className="input"
-            placeholder="Enter price"
-          />
-        </div>
-
-        {/* Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-            <input
-              type="date"
-              name="departureDate"
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
-            <input
-              type="date"
-              name="arrivalDate"
-              className="input"
-            />
-          </div>
-        </div>
-
-        {/* Capacity */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Passenger Capacity</label>
-          <input
-            type="number"
-            name="capacity"
-            className="input"
-            placeholder="Enter passenger capacity"
+            required
           />
         </div>
 
@@ -139,10 +147,77 @@ export default function CruisesPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <textarea
             name="description"
+            value={formData.description}
+            onChange={handleInputChange}
             rows={4}
             className="input"
             placeholder="Enter cruise description"
+            required
           />
+        </div>
+
+        {/* Website */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+          <input
+            type="url"
+            name="website"
+            value={formData.website}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter website URL"
+            required
+          />
+        </div>
+
+        {/* Capacity */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Passenger Capacity</label>
+          <input
+            type="number"
+            name="capacity"
+            value={formData.capacity}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter passenger capacity"
+            required
+            min="1"
+          />
+        </div>
+
+        {/* Base Price */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Base Price</label>
+          <input
+            type="number"
+            name="base_price"
+            value={formData.base_price}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter base price"
+            required
+            min="0"
+            step="0.01"
+          />
+        </div>
+
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="input"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="1">1 - Basic</option>
+            <option value="2">2 - Standard</option>
+            <option value="3">3 - Premium</option>
+            <option value="4">4 - Luxury</option>
+            <option value="5">5 - Ultra Luxury</option>
+          </select>
         </div>
 
         {/* Submit Button */}
@@ -156,10 +231,11 @@ export default function CruisesPage() {
           </button>
           <button
             type="submit"
-            className="btn btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            className="btn btn-primary w-full sm:w-auto flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <FaCloudUploadAlt />
-            Create Cruise
+            {isSubmitting ? 'Creating...' : 'Create Cruise'}
           </button>
         </div>
       </form>
@@ -167,7 +243,7 @@ export default function CruisesPage() {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleFileUpload}
+        onUpload={handleFileUploadSubmit}
       />
     </div>
   )

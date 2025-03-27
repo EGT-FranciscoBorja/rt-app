@@ -3,9 +3,10 @@ import React, { useState } from 'react'
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaDownload } from "react-icons/fa6";
-import { FaCloudUploadAlt } from "react-icons/fa";
+import { FaCloudUploadAlt, FaArrowLeft } from "react-icons/fa";
 import SearchButton from '@/components/search/searchButton';
 import Filters from '@/components/filters/filters';
+import { useRouter } from 'next/navigation';
 
 interface HotelFilters {
   name: string;
@@ -22,6 +23,7 @@ interface HotelFilters {
 }
 
 function ListHotels() {
+  const router = useRouter();
   const [activeFilters, setActiveFilters] = useState<HotelFilters | null>(null);
 
   const handleApplyFilters = (filters: HotelFilters) => {
@@ -35,7 +37,15 @@ function ListHotels() {
       
       <div className="flex-1">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Hotel Management</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/')}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <FaArrowLeft className="text-2xl" />
+            </button>
+            <h1 className="text-3xl font-bold text-gray-800">Hotel Management</h1>
+          </div>
           <div className="flex gap-3">
             <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
               <FaDownload className="text-lg" />

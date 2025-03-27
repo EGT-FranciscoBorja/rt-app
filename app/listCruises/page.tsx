@@ -6,22 +6,26 @@ import { FaPlus, FaArrowLeft } from 'react-icons/fa'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchCruises, selectCruisesStatus, selectCruises } from '../features/cruises/cruisesSlice'
 import CruiseFilters from '@/components/CruiseFilters'
+import { ActionButtons, handleEdit, handleDelete } from './actions'
+import EditCruiseModal from './EditCruiseModal'
+import { Cruise } from '../features/cruises/cruisesSlice'
 
 export default function ListCruisesPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const status = useAppSelector(selectCruisesStatus)
   const cruises = useAppSelector(selectCruises)
+  const [selectedCruise, setSelectedCruise] = useState<Cruise | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const [filters, setFilters] = useState({
     search: '',
-    destination: '',
+    website: '',
     minPrice: '',
     maxPrice: '',
-    minDuration: '',
-    maxDuration: '',
     minCapacity: '',
     maxCapacity: '',
+    category: '',
   })
 
   useEffect(() => {
@@ -33,17 +37,40 @@ export default function ListCruisesPage() {
   const filteredCruises = cruises.filter(cruise => {
     const matchesSearch = cruise.name.toLowerCase().includes(filters.search.toLowerCase()) ||
                          cruise.description.toLowerCase().includes(filters.search.toLowerCase())
-    const matchesDestination = !filters.destination || cruise.destination.toLowerCase().includes(filters.destination.toLowerCase())
-    const matchesPrice = (!filters.minPrice || cruise.price >= Number(filters.minPrice)) &&
-                        (!filters.maxPrice || cruise.price <= Number(filters.maxPrice))
-    const duration = parseInt(cruise.duration)
-    const matchesDuration = (!filters.minDuration || duration >= Number(filters.minDuration)) &&
-                           (!filters.maxDuration || duration <= Number(filters.maxDuration))
+    const matchesWebsite = !filters.website || cruise.website.toLowerCase().includes(filters.website.toLowerCase())
+    const matchesPrice = (!filters.minPrice || cruise.base_price >= Number(filters.minPrice)) &&
+                        (!filters.maxPrice || cruise.base_price <= Number(filters.maxPrice))
     const matchesCapacity = (!filters.minCapacity || cruise.capacity >= Number(filters.minCapacity)) &&
                            (!filters.maxCapacity || cruise.capacity <= Number(filters.maxCapacity))
+    const matchesCategory = !filters.category || cruise.category === Number(filters.category)
 
-    return matchesSearch && matchesDestination && matchesPrice && matchesDuration && matchesCapacity
+    return matchesSearch && matchesWebsite && matchesPrice && matchesCapacity && matchesCategory
   })
+
+  const handleEditClick = (cruise: Cruise) => {
+    setSelectedCruise(cruise)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDeleteClick = async (id: number) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este crucero?')) {
+      try {
+        await handleDelete(id)
+        dispatch(fetchCruises())
+      } catch (error) {
+        console.error('Error deleting cruise:', error)
+      }
+    }
+  }
+
+  const handleSaveEdit = async (cruise: Cruise) => {
+    try {
+      await handleEdit(cruise)
+      dispatch(fetchCruises())
+    } catch (error) {
+      console.error('Error updating cruise:', error)
+    }
+  }
 
   return (
     <div className="container py-6">
@@ -77,30 +104,31 @@ export default function ListCruisesPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departure</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Arrival</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {status === 'loading' ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                         Loading cruises...
                       </td>
                     </tr>
                   ) : status === 'failed' ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-red-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-red-500">
                         Error loading cruises
                       </td>
                     </tr>
                   ) : filteredCruises.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                         No cruises available
                       </td>
                     </tr>
@@ -109,25 +137,33 @@ export default function ListCruisesPage() {
                       <tr key={cruise.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{cruise.name}</div>
-                          <div className="text-sm text-gray-500">{cruise.description}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{cruise.description}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{cruise.destination}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{cruise.duration}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">${cruise.price}</div>
+                          <a href={cruise.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:text-blue-800">
+                            {cruise.website}
+                          </a>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{cruise.capacity}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{new Date(cruise.departureDate).toLocaleDateString()}</div>
+                          <div className="text-sm text-gray-900">${cruise.base_price}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{new Date(cruise.arrivalDate).toLocaleDateString()}</div>
+                          <div className="text-sm text-gray-900">{cruise.category}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{new Date(cruise.created_at).toLocaleDateString()}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <ActionButtons
+                            cruise={cruise}
+                            onEdit={handleEditClick}
+                            onDelete={handleDeleteClick}
+                          />
                         </td>
                       </tr>
                     ))
@@ -138,6 +174,16 @@ export default function ListCruisesPage() {
           </div>
         </div>
       </div>
+
+      <EditCruiseModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedCruise(null)
+        }}
+        cruise={selectedCruise}
+        onSave={handleSaveEdit}
+      />
     </div>
   )
 } 
