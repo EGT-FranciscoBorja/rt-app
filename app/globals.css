@@ -30,7 +30,7 @@
 
 @layer components {
   .container {
-    @apply mx-auto px-4 sm:px-6 lg:px-8;
+    @apply mx-auto px-4 md:px-6 lg:px-8;
   }
   
   .btn {
@@ -50,7 +50,7 @@
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-white rounded-lg shadow-md p-4 md:p-6;
   }
 }
 
@@ -58,10 +58,6 @@
 @media (max-width: 640px) {
   .container {
     @apply px-3;
-  }
-  
-  .card {
-    @apply p-4;
   }
   
   .btn {
@@ -74,10 +70,6 @@
     @apply px-4;
   }
   
-  .card {
-    @apply p-5;
-  }
-  
   .btn {
     @apply px-4 py-2 text-base;
   }
@@ -87,10 +79,6 @@
 @media (min-width: 769px) and (max-width: 1024px) {
   .container {
     @apply px-6;
-  }
-  
-  .card {
-    @apply p-6;
   }
   
   .grid {
