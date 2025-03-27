@@ -11,14 +11,34 @@ interface EditCruiseModalProps {
   onSave: (cruise: Cruise) => Promise<void>
 }
 
+interface FormData {
+  name: string;
+  description: string;
+  website: string;
+  capacity: string;
+  base_price: string;
+  category: string;
+}
+
 export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: EditCruiseModalProps) {
-  const [formData, setFormData] = useState<Partial<Cruise>>({})
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    description: '',
+    website: '',
+    capacity: '',
+    base_price: '',
+    category: ''
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (cruise) {
       setFormData({
-        ...cruise,
+        name: cruise.name,
+        description: cruise.description,
+        website: cruise.website,
+        capacity: cruise.capacity.toString(),
+        base_price: cruise.base_price.toString(),
         category: cruise.category.toString()
       })
     }
@@ -30,19 +50,12 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
 
     setIsSubmitting(true)
     try {
-      const category = parseInt(formData.category as string)
-      
-      if (isNaN(category) || category < 1 || category > 5 || !Number.isInteger(category)) {
-        alert('Category must be an integer between 1 and 5')
-        return
-      }
-
       const updatedCruise = {
         ...cruise,
         ...formData,
-        category: category,
-        capacity: parseInt(formData.capacity as string),
-        base_price: parseFloat(formData.base_price as string)
+        category: Number(formData.category),
+        capacity: Number(formData.capacity),
+        base_price: Number(formData.base_price)
       }
       await onSave(updatedCruise)
       onClose()
@@ -111,8 +124,8 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
             <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
             <input
               type="number"
-              value={formData.capacity || ''}
-              onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+              value={formData.capacity}
+              onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
               className="input"
               min="1"
               required
@@ -124,8 +137,8 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
             <label className="block text-sm font-medium text-gray-700 mb-1">Base Price</label>
             <input
               type="number"
-              value={formData.base_price || ''}
-              onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) })}
+              value={formData.base_price}
+              onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
               className="input"
               min="0"
               step="0.01"
