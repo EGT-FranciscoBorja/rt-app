@@ -31,7 +31,7 @@ const cards_info = (): CardInfo[] => [
 
 const cards = () => {
   return (
-    <div className='grid grid-cols-3 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+    <div className='grid grid-cols-3 gap-4 sm:grid-cols-1 lg:grid-cols-3'>
       {cards_info().map((card) => (
         <Link
           key={card.id}
