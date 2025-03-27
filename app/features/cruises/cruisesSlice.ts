@@ -63,21 +63,8 @@ export const fetchCruises = createAsyncThunk(
       ...(filters.capacityMax && { capacity_max: filters.capacityMax })
     })
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-    const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
-
-    if (!apiUrl || !apiToken) {
-      console.error('API URL or Token not configured')
-      throw new Error('API configuration missing')
-    }
-
     try {
-      const response = await fetch(`${apiUrl}/api/v1/cruise?${queryParams}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${apiToken}`,
-        },
-      })
+      const response = await fetch(`/api/proxy?${queryParams.toString()}`)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
