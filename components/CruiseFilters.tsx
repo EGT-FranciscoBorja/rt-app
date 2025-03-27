@@ -18,6 +18,26 @@ interface CruiseFilters {
 
 export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const [filters, setFilters] = useState<CruiseFilters>({
+    name: '',
+    category: '',
+    priceMin: '',
+    priceMax: '',
+    capacityMin: '',
+    capacityMax: ''
+  })
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleApply = () => {
+    onApplyFilters(filters)
+  }
 
   return (
     <div className={`bg-white rounded-lg shadow-md p-4 transition-all duration-300 ${isOpen ? 'w-80' : 'w-12'}`}>
@@ -39,8 +59,9 @@ export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
             <div className="relative">
               <input
                 type="text"
-                value={filters.search}
-                onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
+                name="name"
+                value={filters.name}
+                onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10"
                 placeholder="Search cruises..."
               />
@@ -48,16 +69,22 @@ export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
             </div>
           </div>
 
-          {/* Destino */}
+          {/* Categoría */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-            <input
-              type="text"
-              value={filters.destination}
-              onChange={(e) => onFilterChange({ ...filters, destination: e.target.value })}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter destination"
-            />
+            >
+              <option value="">All Categories</option>
+              <option value="1">Basic</option>
+              <option value="2">Standard</option>
+              <option value="3">Premium</option>
+              <option value="4">Luxury</option>
+              <option value="5">Ultra Luxury</option>
+            </select>
           </div>
 
           {/* Rango de Precio */}
@@ -66,36 +93,17 @@ export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                value={filters.minPrice}
-                onChange={(e) => onFilterChange({ ...filters, minPrice: e.target.value })}
+                name="priceMin"
+                value={filters.priceMin}
+                onChange={handleFilterChange}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Min"
               />
               <input
                 type="number"
-                value={filters.maxPrice}
-                onChange={(e) => onFilterChange({ ...filters, maxPrice: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Max"
-              />
-            </div>
-          </div>
-
-          {/* Duración */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (days)</label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                value={filters.minDuration}
-                onChange={(e) => onFilterChange({ ...filters, minDuration: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Min"
-              />
-              <input
-                type="number"
-                value={filters.maxDuration}
-                onChange={(e) => onFilterChange({ ...filters, maxDuration: e.target.value })}
+                name="priceMax"
+                value={filters.priceMax}
+                onChange={handleFilterChange}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Max"
               />
@@ -108,20 +116,29 @@ export default function CruiseFilters({ onApplyFilters }: CruiseFiltersProps) {
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                value={filters.minCapacity}
-                onChange={(e) => onFilterChange({ ...filters, minCapacity: e.target.value })}
+                name="capacityMin"
+                value={filters.capacityMin}
+                onChange={handleFilterChange}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Min"
               />
               <input
                 type="number"
-                value={filters.maxCapacity}
-                onChange={(e) => onFilterChange({ ...filters, maxCapacity: e.target.value })}
+                name="capacityMax"
+                value={filters.capacityMax}
+                onChange={handleFilterChange}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Max"
               />
             </div>
           </div>
+
+          <button
+            onClick={handleApply}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Apply Filters
+          </button>
         </div>
       )}
     </div>

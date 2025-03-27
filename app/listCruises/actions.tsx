@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { FaRegEdit } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
 
