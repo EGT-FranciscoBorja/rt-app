@@ -31,20 +31,22 @@ const cards_info = (): CardInfo[] => [
 
 const cards = () => {
   return (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-      {cards_info().map((card) => (
-        <Link
-          key={card.id}
-          href={card.path}
-          className='p-4 bg-white rounded-lg shadow-md text-center'
-        >
-          <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white bg-indigo-500 rounded-full'>
-            {card.icon}
-          </div>
-          <h2 className='text-xl font-semibold'>{card.title}</h2>
-          <p className='mt-2 text-gray-600'>{card.description}</p>
-        </Link>
-      ))}
+    <div className='w-full'>
+      <div className='grid grid-cols-3 gap-4 sm:grid-cols-1 lg:grid-cols-3'>
+        {cards_info().map((card) => (
+          <Link
+            key={card.id}
+            href={card.path}
+            className='p-4 bg-white rounded-lg shadow-md text-center'
+          >
+            <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 text-white bg-indigo-500 rounded-full'>
+              {card.icon}
+            </div>
+            <h2 className='text-xl font-semibold'>{card.title}</h2>
+            <p className='mt-2 text-gray-600'>{card.description}</p>
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }
