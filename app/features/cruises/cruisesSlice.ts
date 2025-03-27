@@ -12,70 +12,80 @@ export interface Cruise {
   updated_at: string
 }
 
-interface CruisesState {
-  items: Cruise[]
-  status: 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: string | null
+interface CruiseFilters {
+  name: string
+  category: string
+  priceMin: string
+  priceMax: string
+  capacityMin: string
+  capacityMax: string
 }
 
-const initialState: CruisesState = {
+interface CruiseState {
+  items: Cruise[]
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  pagination: {
+    current_page: number
+    last_page: number
+    total: number
+    per_page: number
+  }
+}
+
+interface FetchCruisesParams {
+  page: number
+  filters: CruiseFilters
+}
+
+const initialState: CruiseState = {
   items: [],
   status: 'idle',
-  error: null,
+  pagination: {
+    current_page: 1,
+    last_page: 1,
+    total: 0,
+    per_page: 10
+  }
 }
 
 // Función auxiliar para obtener el token
-const getApiToken = () => {
-  const token = process.env.NEXT_PUBLIC_API_TOKEN
-  if (!token) {
-    console.error('API Token no encontrado en las variables de entorno')
-    console.log('Variables de entorno disponibles:', Object.keys(process.env))
-  }
-  return token
-}
 
 export const fetchCruises = createAsyncThunk(
   'cruises/fetchCruises',
-  async () => {
-    try {
-      console.log('Fetching cruises...')
-      const API_TOKEN = getApiToken()
-      
-      if (!API_TOKEN) {
-        throw new Error('API Token no configurado')
-      }
+  async ({ page, filters }: FetchCruisesParams) => {
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      ...(filters.name && { name: filters.name }),
+      ...(filters.category && { category: filters.category }),
+      ...(filters.priceMin && { price_min: filters.priceMin }),
+      ...(filters.priceMax && { price_max: filters.priceMax }),
+      ...(filters.capacityMin && { capacity_min: filters.capacityMin }),
+      ...(filters.capacityMax && { capacity_max: filters.capacityMax })
+    })
 
-      console.log('API Token:', API_TOKEN.substring(0, 5) + '...')
+    const response = await fetch(`/api/v1/cruise?${queryParams}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      },
+    })
 
-      const response = await fetch('/api/v1/cruise', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${API_TOKEN}`,
-        },
-      })
-      
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
-        throw new Error(`Failed to fetch cruises: ${response.status} ${errorText}`)
-      }
+    if (!response.ok) {
+      throw new Error('Failed to fetch cruises')
+    }
 
-      const result = await response.json()
-      console.log('API Response:', result)
+    const result = await response.json()
+    console.log('API Response:', result) // Para debugging
 
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch cruises')
-      }
-
-      return result.data
-    } catch (error) {
-      console.error('Error in fetchCruises:', error)
-      throw error
+    // Acceder a los datos anidados correctamente
+    const cruisesData = result.data?.data || []
+    
+    return {
+      data: cruisesData,
+      current_page: result.data?.current_page || 1,
+      last_page: result.data?.last_page || 1,
+      total: result.data?.total || 0,
+      per_page: result.data?.per_page || 10
     }
   }
 )
@@ -88,21 +98,32 @@ const cruisesSlice = createSlice({
     builder
       .addCase(fetchCruises.pending, (state) => {
         state.status = 'loading'
-        state.error = null
+        state.items = [] // Limpiar los items durante la carga
       })
       .addCase(fetchCruises.fulfilled, (state, action) => {
         state.status = 'succeeded'
-        state.items = action.payload
+        state.items = Array.isArray(action.payload.data) ? action.payload.data : []
+        state.pagination = {
+          current_page: action.payload.current_page,
+          last_page: action.payload.last_page,
+          total: action.payload.total,
+          per_page: action.payload.per_page
+        }
       })
       .addCase(fetchCruises.rejected, (state, action) => {
         state.status = 'failed'
-        state.error = action.error.message || 'Failed to fetch cruises'
+        state.items = []
+        console.error('Error fetching cruises:', action.error.message)
       })
   },
 })
 
-export const selectCruisesStatus = (state: { cruises: CruisesState }) => state.cruises.status
-export const selectCruises = (state: { cruises: CruisesState }) => state.cruises.items
-export const selectCruisesError = (state: { cruises: CruisesState }) => state.cruises.error
+export const selectCruises = (state: { cruises: CruiseState }) => {
+  const items = state.cruises.items
+  return Array.isArray(items) ? items : []
+}
+
+export const selectCruisesStatus = (state: { cruises: CruiseState }) => state.cruises.status
+export const selectPagination = (state: { cruises: CruiseState }) => state.cruises.pagination
 
 export default cruisesSlice.reducer 

@@ -8,30 +8,47 @@ interface EditCruiseModalProps {
   isOpen: boolean
   onClose: () => void
   cruise: Cruise | null
-  onSave: (cruise: Cruise) => void
+  onSave: (cruise: Cruise) => Promise<void>
 }
 
 export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: EditCruiseModalProps) {
   const [formData, setFormData] = useState<Partial<Cruise>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (cruise) {
       setFormData({
         ...cruise,
-        category: cruise.category.toString() // Convertir a string para el select
+        category: cruise.category ? cruise.category.toString() : ''
       })
     }
   }, [cruise])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (cruise) {
+    if (!cruise || isSubmitting) return
+
+    setIsSubmitting(true)
+    try {
+      const category = parseInt(formData.category as string)
+      
+      if (isNaN(category) || category < 1 || category > 5 || !Number.isInteger(category)) {
+        alert('Category must be an integer between 1 and 5')
+        return
+      }
+
       const updatedCruise = {
         ...cruise,
         ...formData,
-        category: parseInt(formData.category as string) // Convertir de vuelta a número
+        category: category
       }
-      onSave(updatedCruise)
+      await onSave(updatedCruise)
+      onClose() // Cerrar el modal después de guardar exitosamente
+    } catch (error) {
+      console.error('Error saving cruise:', error)
+      alert('Error saving cruise. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -45,6 +62,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
+            disabled={isSubmitting}
           >
             <FaTimes className="text-xl" />
           </button>
@@ -59,6 +77,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="input"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -70,6 +89,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               className="input"
               rows={4}
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -81,6 +101,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
               className="input"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -93,6 +114,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               className="input"
               min="1"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -106,6 +128,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               min="0"
               step="0.01"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -116,6 +139,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="input"
               required
+              disabled={isSubmitting}
             >
               <option value="">Select a category</option>
               <option value="1">1 - Basic</option>
@@ -131,14 +155,16 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
               type="button"
               onClick={onClose}
               className="btn btn-secondary"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn btn-primary"
+              disabled={isSubmitting}
             >
-              Save Changes
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

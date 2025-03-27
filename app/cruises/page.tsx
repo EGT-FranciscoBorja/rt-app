@@ -26,7 +26,17 @@ export default function CruisesPage() {
 
   useEffect(() => {
     if (status === 'idle') {
-      dispatch(fetchCruises())
+      dispatch(fetchCruises({
+        page: 1,
+        filters: {
+          name: '',
+          category: '',
+          priceMin: '',
+          priceMax: '',
+          capacityMin: '',
+          capacityMax: ''
+        }
+      }))
     }
   }, [status, dispatch])
 
@@ -46,13 +56,17 @@ export default function CruisesPage() {
     setError(null)
 
     try {
-      // Asegurarnos de que los valores numéricos sean números válidos
+      // Ensure numeric values are valid
       const capacity = parseInt(formData.capacity)
       const basePrice = parseFloat(formData.base_price)
       const category = parseInt(formData.category)
 
       if (isNaN(capacity) || isNaN(basePrice) || isNaN(category)) {
-        throw new Error('Por favor, ingrese valores numéricos válidos')
+        throw new Error('Please enter valid numeric values')
+      }
+
+      if (category < 1 || category > 5) {
+        throw new Error('Category must be a number between 1 and 5')
       }
 
       const cruiseData = {
@@ -64,13 +78,23 @@ export default function CruisesPage() {
         category: category,
       }
 
-      console.log('Enviando datos:', cruiseData) // Para debugging
+      console.log('Sending data:', cruiseData) // For debugging
 
       await handleCreateCruise(cruiseData)
-      dispatch(fetchCruises())
+      dispatch(fetchCruises({
+        page: 1,
+        filters: {
+          name: '',
+          category: '',
+          priceMin: '',
+          priceMax: '',
+          capacityMin: '',
+          capacityMax: ''
+        }
+      }))
       router.push('/listCruises')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el crucero. Por favor, intente nuevamente.')
+      setError(err instanceof Error ? err.message : 'Error creating cruise. Please try again.')
       console.error('Error creating cruise:', err)
     } finally {
       setIsSubmitting(false)
@@ -80,7 +104,17 @@ export default function CruisesPage() {
   const handleFileUploadSubmit = async (file: File) => {
     try {
       await handleFileUpload(file)
-      dispatch(fetchCruises())
+      dispatch(fetchCruises({
+        page: 1,
+        filters: {
+          name: '',
+          category: '',
+          priceMin: '',
+          priceMax: '',
+          capacityMin: '',
+          capacityMax: ''
+        }
+      }))
       setIsUploadModalOpen(false)
     } catch (err) {
       console.error('Error uploading file:', err)
