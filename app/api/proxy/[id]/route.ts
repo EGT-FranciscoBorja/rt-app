@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
   const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
@@ -13,7 +13,7 @@ export async function PUT(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/v1/cruise/${context.params.id}`, {
+    const response = await fetch(`${apiUrl}/api/v1/cruise/${params.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
   const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
@@ -43,7 +43,7 @@ export async function DELETE(
   }
 
   try {
-    const response = await fetch(`${apiUrl}/api/v1/cruise/${context.params.id}`, {
+    const response = await fetch(`${apiUrl}/api/v1/cruise/${params.id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -58,4 +58,4 @@ export async function DELETE(
     console.error('Proxy error:', error)
     return NextResponse.json({ error: 'Failed to delete data' }, { status: 500 })
   }
-} 
+}
