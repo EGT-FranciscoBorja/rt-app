@@ -63,29 +63,45 @@ export const fetchCruises = createAsyncThunk(
       ...(filters.capacityMax && { capacity_max: filters.capacityMax })
     })
 
-    const response = await fetch(`/api/v1/cruise?${queryParams}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-      },
-    })
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+    const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch cruises')
+    if (!apiUrl || !apiToken) {
+      console.error('API URL or Token not configured')
+      throw new Error('API configuration missing')
     }
 
-    const result = await response.json()
-    console.log('API Response:', result) // Para debugging
+    try {
+      const response = await fetch(`${apiUrl}/api/v1/cruise?${queryParams}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiToken}`,
+        },
+      })
 
-    // Acceder a los datos anidados correctamente
-    const cruisesData = result.data?.data || []
-    
-    return {
-      data: cruisesData,
-      current_page: result.data?.current_page || 1,
-      last_page: result.data?.last_page || 1,
-      total: result.data?.total || 0,
-      per_page: result.data?.per_page || 10
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        })
+        throw new Error(`Failed to fetch cruises: ${response.status} ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('API Response:', result)
+
+      return {
+        data: result.data?.data || [],
+        current_page: result.data?.current_page || 1,
+        last_page: result.data?.last_page || 1,
+        total: result.data?.total || 0,
+        per_page: result.data?.per_page || 10
+      }
+    } catch (error) {
+      console.error('Error in fetchCruises:', error)
+      throw error
     }
   }
 )
