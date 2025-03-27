@@ -9,7 +9,7 @@ import { FaCloudUploadAlt, FaArrowLeft, FaTimes, FaChevronLeft, FaChevronRight }
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchCruises, selectCruisesStatus, selectCruises, selectPagination } from '../features/cruises/cruisesSlice'
 import EditCruiseModal from './EditCruiseModal'
-import { handleEdit, handleDelete } from './actions'
+import { handleEdit, handleDelete, Cruise } from './actions'
 
 interface CruiseFilters {
   name: string
