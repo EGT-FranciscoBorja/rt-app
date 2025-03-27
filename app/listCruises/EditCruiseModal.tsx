@@ -19,7 +19,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
     if (cruise) {
       setFormData({
         ...cruise,
-        category: cruise.category ? cruise.category.toString() : ''
+        category: cruise.category.toString()
       })
     }
   }, [cruise])
@@ -40,10 +40,12 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
       const updatedCruise = {
         ...cruise,
         ...formData,
-        category: category
+        category: category,
+        capacity: parseInt(formData.capacity as string),
+        base_price: parseFloat(formData.base_price as string)
       }
       await onSave(updatedCruise)
-      onClose() // Cerrar el modal después de guardar exitosamente
+      onClose()
     } catch (error) {
       console.error('Error saving cruise:', error)
       alert('Error saving cruise. Please try again.')
