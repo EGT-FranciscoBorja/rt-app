@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-  const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
-  const body = await request.json()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || '';
+  const body = await request.json();
 
   if (!apiUrl || !apiToken) {
-    return NextResponse.json({ error: 'API configuration missing' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'API configuration missing' },
+      { status: 500 }
+    );
   }
 
   try {
@@ -17,17 +20,20 @@ export async function PUT(
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${apiToken}`,
+        Accept: 'application/json',
+        Authorization: `Bearer ${apiToken}`,
       },
       body: JSON.stringify(body),
-    })
+    });
 
-    const data = await response.json()
-    return NextResponse.json(data)
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error)
-    return NextResponse.json({ error: 'Failed to update data' }, { status: 500 })
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update data' },
+      { status: 500 }
+    );
   }
 }
 
@@ -35,11 +41,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
-  const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || ''
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const apiToken = process.env.NEXT_PUBLIC_API_TOKEN || '';
 
   if (!apiUrl || !apiToken) {
-    return NextResponse.json({ error: 'API configuration missing' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'API configuration missing' },
+      { status: 500 }
+    );
   }
 
   try {
@@ -47,15 +56,18 @@ export async function DELETE(
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${apiToken}`,
+        Accept: 'application/json',
+        Authorization: `Bearer ${apiToken}`,
       },
-    })
+    });
 
-    const data = await response.json()
-    return NextResponse.json(data)
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error)
-    return NextResponse.json({ error: 'Failed to delete data' }, { status: 500 })
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete data' },
+      { status: 500 }
+    );
   }
 }
