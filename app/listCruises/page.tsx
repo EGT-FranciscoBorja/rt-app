@@ -45,26 +45,13 @@ export default function ListCruisesPage() {
     capacityMin: '',
     capacityMax: ''
   })
-  const [retryCount, setRetryCount] = useState(0)
-  const MAX_RETRIES = 3
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await dispatch(fetchCruises({
-          page: currentPage,
-          filters: activeFilters
-        })).unwrap()
-      } catch (error) {
-        console.error('Error fetching cruises:', error)
-        if (retryCount < MAX_RETRIES) {
-          setRetryCount(prev => prev + 1)
-        }
-      }
-    }
-
-    fetchData()
-  }, [dispatch, currentPage, activeFilters, retryCount])
+    dispatch(fetchCruises({
+      page: currentPage,
+      filters: activeFilters
+    }))
+  }, [dispatch, currentPage, activeFilters])
 
   const handleEditClick = (cruise: Cruise) => {
     setEditingCruise(cruise)
