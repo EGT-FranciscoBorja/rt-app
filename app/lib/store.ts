@@ -1,13 +1,24 @@
 import { configureStore } from '@reduxjs/toolkit'
+import cruisesReducer from './features/crusies/cruisesSlice'
+import cabinsReducer from './features/cabins/cabinsSlice'
+import itinerariesReducer from './features/itineraries/itinerariesSlice'
+import departuresReducer from './features/departures/departuresSlice'
 
-export const makeStore = () => {
-  return configureStore({
-    reducer: {},
-  })
-}
+export const store = configureStore({
+  reducer: {
+    cruises: cruisesReducer,
+    cabins: cabinsReducer,
+    itineraries: itinerariesReducer,
+    departures: departuresReducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
+})
 
-// Infer the type of makeStore
-export type AppStore = ReturnType<typeof makeStore>
+// Infer the type of store
+export type AppStore = typeof store
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<AppStore['getState']>
-export type AppDispatch = AppStore['dispatch']
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch

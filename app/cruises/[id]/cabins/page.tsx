@@ -1,5 +1,6 @@
 import React from 'react'
 import CabinsList from '@/components/CabinsList'
+import ItinerariesList from '@/components/ItinerariesList'
 
 interface PageProps {
   params: Promise<{
@@ -23,8 +24,9 @@ export default async function CabinsPage({ params, searchParams }: PageProps) {
   }
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-8">
       <CabinsList cruiseId={cruiseId} />
+      <ItinerariesList cruiseId={cruiseId} />
     </div>
   )
 }
