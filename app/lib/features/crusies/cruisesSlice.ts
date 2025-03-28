@@ -55,11 +55,16 @@ if (!API_TOKEN) {
   console.error('NEXT_PUBLIC_API_TOKEN is not configured')
 }
 
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 segundo
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 export const fetchCruises = createAsyncThunk(
   'cruises/fetchCruises',
-  async ({ page, filters }: FetchCruisesParams) => {
+  async ({ page, filters }: FetchCruisesParams, { rejectWithValue }) => {
     if (!API_TOKEN) {
-      throw new Error('API configuration is incomplete. Please check your environment variables.')
+      return rejectWithValue('API configuration is incomplete. Please check your environment variables.')
     }
 
     const queryParams = new URLSearchParams({
@@ -72,39 +77,65 @@ export const fetchCruises = createAsyncThunk(
       ...(filters.capacityMax && { capacity_max: filters.capacityMax })
     })
 
-    try {
-      const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${API_TOKEN}`,
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData,
-          url: `/api/v1/cruise?${queryParams.toString()}`
+    let lastError = null
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_TOKEN}`,
+          },
+          credentials: 'include',
         })
-        throw new Error(`Failed to fetch cruises: ${response.status}`)
-      }
 
-      const result = await response.json()
-      console.log('API Response:', result)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error(`API Error (attempt ${attempt}/${MAX_RETRIES}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            data: errorData,
+            url: `/api/v1/cruise?${queryParams.toString()}`,
+            headers: Object.fromEntries(response.headers.entries())
+          })
+          
+          if (response.status === 403) {
+            throw new Error('No tienes autorización para acceder a este recurso. Por favor, verifica tu token de API.')
+          }
+          
+          lastError = new Error(`Failed to fetch cruises: ${response.status}`)
+          if (attempt < MAX_RETRIES) {
+            await delay(RETRY_DELAY * attempt)
+            continue
+          }
+          throw lastError
+        }
 
-      return {
-        data: result.data?.data || [],
-        current_page: result.data?.current_page || 1,
-        last_page: result.data?.last_page || 1,
-        total: result.data?.total || 0,
-        per_page: result.data?.per_page || 10
+        const result = await response.json()
+        console.log('API Response:', result)
+
+        if (!result.success) {
+          throw new Error(result.message || 'Error al obtener los cruceros')
+        }
+
+        return {
+          data: result.data?.data || [],
+          current_page: result.data?.current_page || 1,
+          last_page: result.data?.last_page || 1,
+          total: result.data?.total || 0,
+          per_page: result.data?.per_page || 10
+        }
+      } catch (error) {
+        console.error(`Error in fetchCruises (attempt ${attempt}/${MAX_RETRIES}):`, error)
+        lastError = error
+        if (attempt < MAX_RETRIES) {
+          await delay(RETRY_DELAY * attempt)
+          continue
+        }
       }
-    } catch (error) {
-      console.error('Error in fetchCruises:', error)
-      throw error
     }
+    return rejectWithValue(lastError)
   }
 )
 
@@ -131,7 +162,7 @@ const cruisesSlice = createSlice({
       .addCase(fetchCruises.rejected, (state, action) => {
         state.status = 'failed'
         state.items = []
-        console.error('Error fetching cruises:', action.error.message)
+        console.error('Error fetching cruises:', action.error.message || action.payload)
       })
   },
 })
