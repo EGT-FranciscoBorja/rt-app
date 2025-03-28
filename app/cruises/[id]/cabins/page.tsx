@@ -2,14 +2,15 @@ import React from 'react'
 import CabinsList from '@/components/CabinsList'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
+  }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-async function CabinsPage({ params }: PageProps) {
-  const cruiseId = parseInt(params.id)
+export default async function CabinsPage({ params, searchParams }: PageProps) {
+  const [resolvedParams] = await Promise.all([params, searchParams])
+  const cruiseId = parseInt(resolvedParams.id)
 
   if (isNaN(cruiseId)) {
     return (
@@ -27,5 +28,3 @@ async function CabinsPage({ params }: PageProps) {
     </div>
   )
 }
-
-export default CabinsPage
