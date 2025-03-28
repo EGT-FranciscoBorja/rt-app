@@ -8,7 +8,6 @@ export interface CabinFormData {
 }
 
 interface CabinFormProps {
-  cruiseId: number
   existingCabins?: Array<{
     id?: number
     name: string
@@ -20,7 +19,7 @@ interface CabinFormProps {
   onEditCabin: (id: number, cabin: CabinFormData) => void
 }
 
-function CabinForm({ cruiseId, existingCabins = [], onAddCabin, onDeleteCabin, onEditCabin }: CabinFormProps) {
+function CabinForm({ existingCabins = [], onAddCabin, onDeleteCabin, onEditCabin }: CabinFormProps) {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formData, setFormData] = useState<CabinFormData>({
     name: '',

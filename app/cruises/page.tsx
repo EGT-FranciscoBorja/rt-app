@@ -292,7 +292,6 @@ export default function CruisesPage() {
 
         {/* Cabins Section */}
         <CabinForm
-          cruiseId={0} // This will be updated after cruise creation
           existingCabins={tempCabins}
           onAddCabin={handleAddCabin}
           onDeleteCabin={handleDeleteCabin}

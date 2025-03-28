@@ -299,7 +299,6 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
 
           {/* Cabins Section */}
           <CabinForm
-            cruiseId={cruise.id}
             existingCabins={isLoadingCabins ? [] : allCabins}
             onAddCabin={handleAddCabin}
             onDeleteCabin={handleDeleteCabin}
