@@ -49,7 +49,6 @@ const initialState: CruiseState = {
 }
 
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.rtapi.lat'
 
 // Validar configuración al inicio
 if (!API_TOKEN) {
