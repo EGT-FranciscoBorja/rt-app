@@ -1,13 +1,14 @@
 import React from 'react'
 import CabinsList from '@/components/CabinsList'
 
-interface CabinsPageProps {
+interface PageProps {
   params: {
     id: string
   }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-async function CabinsPage({ params }: CabinsPageProps) {
+async function CabinsPage({ params }: PageProps) {
   const cruiseId = parseInt(params.id)
 
   if (isNaN(cruiseId)) {
