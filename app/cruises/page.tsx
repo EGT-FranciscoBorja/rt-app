@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FaCloudUploadAlt, FaFileUpload, FaTimes } from 'react-icons/fa'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchCruises, selectCruisesStatus } from '../features/cruises/cruisesSlice'
+import { fetchCruises, selectCruisesStatus } from '../lib/features/crusies/cruisesSlice'
 import UploadModal from '@/components/UploadModal'
 import { handleCreateCruise, handleFileUpload } from './actions'
 

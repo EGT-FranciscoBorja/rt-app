@@ -48,11 +48,20 @@ const initialState: CruiseState = {
   }
 }
 
-// Función auxiliar para obtener el token
+const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN
+
+// Validar configuración al inicio
+if (!API_TOKEN) {
+  console.error('NEXT_PUBLIC_API_TOKEN is not configured')
+}
 
 export const fetchCruises = createAsyncThunk(
   'cruises/fetchCruises',
   async ({ page, filters }: FetchCruisesParams) => {
+    if (!API_TOKEN) {
+      throw new Error('API configuration is incomplete. Please check your environment variables.')
+    }
+
     const queryParams = new URLSearchParams({
       page: page.toString(),
       ...(filters.name && { name: filters.name }),
@@ -64,16 +73,22 @@ export const fetchCruises = createAsyncThunk(
     })
 
     try {
-      const response = await fetch(`/api/proxy?${queryParams.toString()}`)
+      const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`,
+        },
+      })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error('API Error:', {
           status: response.status,
           statusText: response.statusText,
-          data: errorData
+          data: errorData,
+          url: `/api/v1/cruise?${queryParams.toString()}`
         })
-        throw new Error(`Failed to fetch cruises: ${response.status} ${response.statusText}`)
+        throw new Error(`Failed to fetch cruises: ${response.status}`)
       }
 
       const result = await response.json()
