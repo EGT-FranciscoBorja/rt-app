@@ -5,13 +5,16 @@ import { useRouter } from 'next/navigation'
 import { FaCloudUploadAlt, FaFileUpload, FaTimes } from 'react-icons/fa'
 import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchCruises, selectCruisesStatus } from '../lib/features/crusies/cruisesSlice'
+import { addTempCabin, removeTempCabin, updateTempCabin, selectTempCabins } from '../lib/features/cabins/cabinsSlice'
 import UploadModal from '@/components/UploadModal'
+import CabinForm from '@/components/CabinForm'
 import { handleCreateCruise, handleFileUpload } from './actions'
 
 export default function CruisesPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const status = useAppSelector(selectCruisesStatus)
+  const tempCabins = useAppSelector(selectTempCabins)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -80,7 +83,28 @@ export default function CruisesPage() {
 
       console.log('Sending data:', cruiseData) // For debugging
 
-      await handleCreateCruise(cruiseData)
+      const response = await handleCreateCruise(cruiseData)
+      const cruiseId = response.data.id
+
+      // Create cabins if any
+      if (tempCabins.length > 0) {
+        for (const cabin of tempCabins) {
+          await fetch(`/api/v1/cruise/${cruiseId}/cabin`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+            },
+            body: JSON.stringify({
+              name: cabin.name,
+              quantity: parseInt(cabin.quantity),
+              base_price: parseFloat(cabin.base_price),
+            }),
+          })
+        }
+      }
+
       dispatch(fetchCruises({
         page: 1,
         filters: {
@@ -119,6 +143,18 @@ export default function CruisesPage() {
     } catch (err) {
       console.error('Error uploading file:', err)
     }
+  }
+
+  const handleAddCabin = (cabinData: { name: string, quantity: string, base_price: string }) => {
+    dispatch(addTempCabin(cabinData))
+  }
+
+  const handleDeleteCabin = (id: number) => {
+    dispatch(removeTempCabin(id))
+  }
+
+  const handleEditCabin = (id: number, cabinData: { name: string, quantity: string, base_price: string }) => {
+    dispatch(updateTempCabin({ id, ...cabinData }))
   }
 
   return (
@@ -161,7 +197,7 @@ export default function CruisesPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="card space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Cruise Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Cruise Name</label>
@@ -253,6 +289,15 @@ export default function CruisesPage() {
             <option value="5">5 - Ultra Luxury</option>
           </select>
         </div>
+
+        {/* Cabins Section */}
+        <CabinForm
+          cruiseId={0} // This will be updated after cruise creation
+          existingCabins={tempCabins}
+          onAddCabin={handleAddCabin}
+          onDeleteCabin={handleDeleteCabin}
+          onEditCabin={handleEditCabin}
+        />
 
         {/* Submit Button */}
         <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">

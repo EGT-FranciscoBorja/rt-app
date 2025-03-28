@@ -7,7 +7,7 @@ interface CabinsPageProps {
   }
 }
 
-function CabinsPage({ params }: CabinsPageProps) {
+async function CabinsPage({ params }: CabinsPageProps) {
   const cruiseId = parseInt(params.id)
 
   if (isNaN(cruiseId)) {

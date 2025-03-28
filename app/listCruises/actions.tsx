@@ -25,10 +25,12 @@ export const handleEdit = async (cruise: Cruise) => {
 
     console.log('Enviando datos de edición:', cruiseData) // Para debugging
 
-    const response = await fetch(`/api/proxy/${cruise.id}`, {
+    const response = await fetch(`/api/v1/cruise/${cruise.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
       },
       body: JSON.stringify(cruiseData),
     })
@@ -46,10 +48,12 @@ export const handleEdit = async (cruise: Cruise) => {
 
 export const handleDelete = async (id: number) => {
   try {
-    const response = await fetch(`/api/proxy/${id}`, {
+    const response = await fetch(`/api/v1/cruise/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
       },
     })
 

@@ -10,14 +10,23 @@ export interface Cabin {
   updated_at: string
 }
 
+interface TempCabin {
+  id?: number
+  name: string
+  quantity: string
+  base_price: string
+}
+
 interface CabinState {
   items: Cabin[]
   status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  tempCabins: TempCabin[]
 }
 
 const initialState: CabinState = {
   items: [],
-  status: 'idle'
+  status: 'idle',
+  tempCabins: []
 }
 
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN
@@ -85,10 +94,117 @@ export const fetchCabins = createAsyncThunk(
   }
 )
 
+export const createCabin = createAsyncThunk(
+  'cabins/createCabin',
+  async ({ cruiseId, cabinData }: { cruiseId: number, cabinData: { name: string, quantity: string, base_price: string } }) => {
+    if (!API_TOKEN) {
+      throw new Error('API configuration is incomplete. Please check your environment variables.')
+    }
+
+    try {
+      const response = await fetch(`/api/v1/cruise/${cruiseId}/cabin`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify(cabinData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create cabin')
+      }
+
+      const result = await response.json()
+      return result.data
+    } catch (error) {
+      console.error('Error creating cabin:', error)
+      throw error
+    }
+  }
+)
+
+export const updateCabin = createAsyncThunk(
+  'cabins/updateCabin',
+  async ({ cruiseId, cabinId, cabinData }: { cruiseId: number, cabinId: number, cabinData: { name: string, quantity: string, base_price: string } }) => {
+    if (!API_TOKEN) {
+      throw new Error('API configuration is incomplete. Please check your environment variables.')
+    }
+
+    try {
+      const response = await fetch(`/api/v1/cruise/${cruiseId}/cabin/${cabinId}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify(cabinData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update cabin')
+      }
+
+      const result = await response.json()
+      return result.data
+    } catch (error) {
+      console.error('Error updating cabin:', error)
+      throw error
+    }
+  }
+)
+
+export const deleteCabin = createAsyncThunk(
+  'cabins/deleteCabin',
+  async ({ cruiseId, cabinId }: { cruiseId: number, cabinId: number }) => {
+    if (!API_TOKEN) {
+      throw new Error('API configuration is incomplete. Please check your environment variables.')
+    }
+
+    try {
+      const response = await fetch(`/api/v1/cruise/${cruiseId}/cabin/${cabinId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete cabin')
+      }
+
+      return cabinId
+    } catch (error) {
+      console.error('Error deleting cabin:', error)
+      throw error
+    }
+  }
+)
+
 const cabinsSlice = createSlice({
   name: 'cabins',
   initialState,
-  reducers: {},
+  reducers: {
+    addTempCabin: (state, action) => {
+      state.tempCabins.push(action.payload)
+    },
+    removeTempCabin: (state, action) => {
+      state.tempCabins = state.tempCabins.filter(cabin => cabin.id !== action.payload)
+    },
+    updateTempCabin: (state, action) => {
+      const index = state.tempCabins.findIndex(cabin => cabin.id === action.payload.id)
+      if (index !== -1) {
+        state.tempCabins[index] = action.payload
+      }
+    },
+    clearTempCabins: (state) => {
+      state.tempCabins = []
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCabins.pending, (state) => {
@@ -104,8 +220,22 @@ const cabinsSlice = createSlice({
         state.items = []
         console.error('Error fetching cabins:', action.error.message || action.payload)
       })
+      .addCase(createCabin.fulfilled, (state, action) => {
+        state.items.push(action.payload)
+      })
+      .addCase(updateCabin.fulfilled, (state, action) => {
+        const index = state.items.findIndex(cabin => cabin.id === action.payload.id)
+        if (index !== -1) {
+          state.items[index] = action.payload
+        }
+      })
+      .addCase(deleteCabin.fulfilled, (state, action) => {
+        state.items = state.items.filter(cabin => cabin.id !== action.payload)
+      })
   },
 })
+
+export const { addTempCabin, removeTempCabin, updateTempCabin, clearTempCabins } = cabinsSlice.actions
 
 export const selectCabins = (state: { cabins: CabinState }) => {
   const items = state.cabins.items
@@ -113,5 +243,6 @@ export const selectCabins = (state: { cabins: CabinState }) => {
 }
 
 export const selectCabinsStatus = (state: { cabins: CabinState }) => state.cabins.status
+export const selectTempCabins = (state: { cabins: CabinState }) => state.cabins.tempCabins
 
 export default cabinsSlice.reducer

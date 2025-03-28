@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchCruises, selectCruisesStatus, selectCruises, selectPagination } from '../lib/features/crusies/cruisesSlice'
 import EditCruiseModal from './EditCruiseModal'
 import { handleEdit, handleDelete, Cruise } from './actions'
+import Link from 'next/link'
 
 interface CruiseFilters {
   name: string
@@ -389,7 +390,11 @@ export default function ListCruisesPage() {
                   cruises.map((cruise) => (
                     <tr key={cruise.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{cruise.name}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          <Link href={`/cruises/${cruise.id}/cabins`} className="text-blue-600 hover:text-blue-800">
+                            {cruise.name}
+                          </Link>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 line-clamp-2">{cruise.description}</div>
