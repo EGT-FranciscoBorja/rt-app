@@ -20,6 +20,10 @@ const nextConfig = {
       },
     ]
   },
+  env: {
+    NEXT_PUBLIC_API_TOKEN: process.env.NEXT_PUBLIC_API_TOKEN,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
 }
 
 module.exports = nextConfig 
