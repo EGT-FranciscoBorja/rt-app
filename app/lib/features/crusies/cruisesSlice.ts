@@ -49,6 +49,7 @@ const initialState: CruiseState = {
 }
 
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.rtapi.lat'
 
 // Validar configuración al inicio
 if (!API_TOKEN) {
@@ -75,7 +76,7 @@ export const fetchCruises = createAsyncThunk(
     try {
       console.log('Making API request with token:', API_TOKEN.substring(0, 10) + '...')
       
-      const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
+      const response = await fetch(`${API_URL}/api/v1/cruise?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -91,13 +92,17 @@ export const fetchCruises = createAsyncThunk(
           status: response.status,
           statusText: response.statusText,
           data: errorData,
-          url: `/api/v1/cruise?${queryParams.toString()}`,
+          url: `${API_URL}/api/v1/cruise?${queryParams.toString()}`,
           headers: Object.fromEntries(response.headers.entries()),
           token: API_TOKEN.substring(0, 10) + '...'
         })
         
         if (response.status === 403) {
           throw new Error('No tienes autorización para acceder a este recurso. Por favor, verifica tu token de API.')
+        }
+        
+        if (response.status === 502) {
+          throw new Error('Error de conexión con el servidor. Por favor, intenta nuevamente en unos momentos.')
         }
         
         throw new Error(`Failed to fetch cruises: ${response.status}`)

@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'https://api.tukantek.com/api/:path*',
+        destination: 'https://api.rtapi.lat/api/:path*',
       },
     ]
   },
