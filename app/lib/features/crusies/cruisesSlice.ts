@@ -76,7 +76,7 @@ export const fetchCruises = createAsyncThunk(
     try {
       console.log('Making API request with token:', API_TOKEN.substring(0, 10) + '...')
       
-      const response = await fetch(`${API_URL}/api/v1/cruise?${queryParams.toString()}`, {
+      const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -84,6 +84,7 @@ export const fetchCruises = createAsyncThunk(
           'Authorization': `Bearer ${API_TOKEN}`,
         },
         credentials: 'include',
+        mode: 'cors',
       })
 
       if (!response.ok) {
@@ -92,7 +93,7 @@ export const fetchCruises = createAsyncThunk(
           status: response.status,
           statusText: response.statusText,
           data: errorData,
-          url: `${API_URL}/api/v1/cruise?${queryParams.toString()}`,
+          url: `/api/v1/cruise?${queryParams.toString()}`,
           headers: Object.fromEntries(response.headers.entries()),
           token: API_TOKEN.substring(0, 10) + '...'
         })
