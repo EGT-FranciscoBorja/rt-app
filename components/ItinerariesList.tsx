@@ -4,8 +4,11 @@ import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchItineraries, selectItineraries, selectItinerariesStatus, createItinerary, updateItinerary, deleteItinerary } from '@/app/lib/features/itineraries/itinerariesSlice'
 import { fetchDepartures, selectDepartures, createDeparture, updateDeparture, deleteDeparture } from '@/app/lib/features/departures/departuresSlice'
+import { fetchPrices, selectPrices } from '@/app/lib/features/itineraries/itinerariesPricesSlice'
+import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/features/cabins/cabinsSlice'
 import { FaRegEdit, FaPlus, FaTimes } from 'react-icons/fa'
 import { RiDeleteBin6Line } from 'react-icons/ri'
+import ItineraryPricesForm from './ItineraryPricesForm'
 
 interface ItinerariesListProps {
   cruiseId: number
@@ -23,6 +26,10 @@ interface ItineraryFormData {
     start_date: string
     end_date: string
   }>
+  prices: Array<{
+    cruise_cabin_id: number
+    price: number
+  }>
 }
 
 interface DepartureFormData {
@@ -30,10 +37,22 @@ interface DepartureFormData {
   end_date: string
 }
 
+interface Price {
+  id: number
+  cruise_cabin_id: number
+  cruise_itinerary_id: number
+  price: number
+  created_at: string
+  updated_at: string
+}
+
 function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const dispatch = useAppDispatch()
   const itineraries = useAppSelector(selectItineraries)
   const departures = useAppSelector(selectDepartures)
+  const prices = useAppSelector(selectPrices)
+  const cabins = useAppSelector(selectCabins)
+  const cabinsStatus = useAppSelector(selectCabinsStatus)
   const status = useAppSelector(selectItinerariesStatus)
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -42,12 +61,15 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const [formData, setFormData] = useState<ItineraryFormData>({
     name: '',
     days: '',
-    departures: [{ start_date: '', end_date: '' }]
+    departures: [{ start_date: '', end_date: '' }],
+    prices: []
   })
   const [departureFormData, setDepartureFormData] = useState<DepartureFormData>({
     start_date: '',
     end_date: ''
   })
+  const [selectedItinerary, setSelectedItinerary] = useState<{ id: number; name: string; days: number } | null>(null)
+  const [showPricesForm, setShowPricesForm] = useState(false)
 
   useEffect(() => {
     if (status === 'idle') {
@@ -94,6 +116,103 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       loadDepartures()
     }
   }, [dispatch, cruiseId, itineraries])
+
+  useEffect(() => {
+    const loadPrices = async () => {
+      if (itineraries && itineraries.length > 0 && cabinsStatus === 'succeeded') {
+        try {
+          console.log('Iniciando carga de precios...')
+          // Limpiar los precios existentes antes de cargar los nuevos
+          dispatch({ type: 'itinerariesPrices/clearPrices' })
+          
+          // Cargar los precios para cada itinerario
+          for (const itinerary of itineraries) {
+            try {
+              console.log(`Cargando precios para el itinerario ${itinerary.id}`)
+              const result = await dispatch(fetchPrices({ 
+                cruiseId, 
+                itineraryId: itinerary.id 
+              })).unwrap()
+              
+              console.log(`Precios cargados para itinerario ${itinerary.id}:`, result)
+              
+              // Si no hay precios, no mostrar error
+              if (!result || result.length === 0) {
+                console.log(`No hay precios para el itinerario ${itinerary.id}`)
+                continue
+              }
+
+              // Verificar que los precios se agregaron correctamente al estado
+              if (Array.isArray(result)) {
+                result.forEach(price => {
+                  console.log(`Precio agregado al estado:`, {
+                    id: price.id,
+                    cabin_id: price.cruise_cabin_id,
+                    itinerary_id: price.cruise_itinerary_id,
+                    price: price.price
+                  })
+                })
+              }
+            } catch (error: unknown) {
+              const apiError = error as ApiError
+              // Solo mostrar error si no es un 404 (no encontrado)
+              if (apiError?.status !== 404) {
+                console.error(`Error loading prices for itinerary ${itinerary.id}:`, error)
+              }
+              continue
+            }
+          }
+        } catch (error) {
+          console.error('Error in loadPrices:', error)
+        }
+      }
+    }
+
+    if (cruiseId > 0) {
+      loadPrices()
+    }
+  }, [dispatch, cruiseId, itineraries, cabinsStatus])
+
+  // Añadir un useEffect para debug específico de precios
+  useEffect(() => {
+    console.log('=== PRICES DEBUG ===')
+    console.log('Prices array:', prices)
+    console.log('Prices length:', prices?.length)
+    console.log('First price:', prices?.[0])
+    console.log('Cabins status:', cabinsStatus)
+    console.log('Cabins:', cabins)
+  }, [prices, cabinsStatus, cabins])
+
+  // Añadir un console.log para debug
+  useEffect(() => {
+    console.log('=== DEBUG INFO ===')
+    console.log('Current prices:', prices)
+    console.log('Current cabins:', cabins)
+    console.log('Cabins status:', cabinsStatus)
+    console.log('Current itineraries:', itineraries)
+    
+    // Debug específico para precios y cabinas
+    if (prices && prices.length > 0 && cabins && cabins.length > 0) {
+      console.log('=== PRICES AND CABINS MATCHING ===')
+      prices.forEach(price => {
+        const cabin = cabins.find(c => c.id === price.cruise_cabin_id)
+        console.log(`Price ID: ${price.id}`)
+        console.log(`- Cruise Cabin ID: ${price.cruise_cabin_id}`)
+        console.log(`- Cabin found:`, cabin)
+        console.log(`- Cabin name: ${cabin?.name || 'Not found'}`)
+        console.log(`- Price: ${price.price}`)
+        console.log('---')
+      })
+    } else {
+      console.log('No hay precios o cabinas disponibles para hacer el matching')
+    }
+  }, [prices, cabins, cabinsStatus, itineraries])
+
+  useEffect(() => {
+    if (cruiseId > 0) {
+      dispatch(fetchCabins(cruiseId))
+    }
+  }, [dispatch, cruiseId])
 
   // Añadir un useEffect adicional para recargar cuando cambia el cruiseId
   useEffect(() => {
@@ -262,7 +381,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         }
       }
-      setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }] })
+      setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }], prices: [] })
       setEditingId(null)
       setIsAdding(false)
     } catch (error) {
@@ -321,7 +440,8 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     setFormData({
       name: itinerary.name,
       days: itinerary.days.toString(),
-      departures: departuresData
+      departures: departuresData,
+      prices: prices.filter(p => p.cruise_itinerary_id === itinerary.id)
     })
   }
 
@@ -396,7 +516,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           onClick={() => {
             setIsAdding(true)
             setEditingId(null)
-            setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }] })
+            setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }], prices: [] })
           }}
           className="btn btn-primary flex items-center gap-2"
         >
@@ -406,105 +526,115 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       </div>
 
       {(isAdding || editingId) && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="input"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
-              <input
-                type="number"
-                name="days"
-                value={formData.days}
-                onChange={handleDaysChange}
-                className="input"
-                min="1"
-                required
-              />
-            </div>
-          </div>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg max-w-2xl w-full">
+            <h2 className="text-xl font-semibold mb-4">Edit Itinerary</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
+                  <input
+                    type="number"
+                    name="days"
+                    value={formData.days}
+                    onChange={handleDaysChange}
+                    className="input"
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium text-gray-900">Departures</h3>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={handleAddDeparture}
-                  className="btn btn-secondary text-sm"
-                >
-                  Add Departure
-                </button>
-              )}
-            </div>
-            <div className="space-y-4">
-              {formData.departures.map((departure, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg shadow-sm relative">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={departure.start_date}
-                      onChange={(e) => handleDateChange(index, e)}
-                      className="input"
-                      required={index !== formData.departures.length - 1}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={departure.end_date}
-                      onChange={(e) => handleDateChange(index, e)}
-                      className="input"
-                      required={index !== formData.departures.length - 1}
-                    />
-                  </div>
-                  {index !== formData.departures.length - 1 && (
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-medium text-gray-900">Departures</h3>
+                  {editingId && (
                     <button
                       type="button"
-                      onClick={() => handleDeleteDeparture(index)}
-                      className="absolute top-2 right-2 text-red-600 hover:text-red-900"
+                      onClick={handleAddDeparture}
+                      className="btn btn-secondary text-sm"
                     >
-                      <FaTimes className="text-lg" />
+                      Add Departure
                     </button>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="space-y-4">
+                  {formData.departures.map((departure, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg shadow-sm relative">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          name="start_date"
+                          value={departure.start_date}
+                          onChange={(e) => handleDateChange(index, e)}
+                          className="input"
+                          required={index !== formData.departures.length - 1}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          name="end_date"
+                          value={departure.end_date}
+                          onChange={(e) => handleDateChange(index, e)}
+                          className="input"
+                          required={index !== formData.departures.length - 1}
+                        />
+                      </div>
+                      {index !== formData.departures.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDeparture(index)}
+                          className="absolute top-2 right-2 text-red-600 hover:text-red-900"
+                        >
+                          <FaTimes className="text-lg" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setIsAdding(false)
-                setEditingId(null)
-                setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }] })
-              }}
-              className="btn btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-            >
-              {editingId ? 'Update' : 'Add'} Itinerary
-            </button>
+              <div className="mt-6">
+                <ItineraryPricesForm
+                  cruiseId={cruiseId}
+                  itineraryId={editingId || 0}
+                  cabins={[]} // You'll need to pass the cabins data here
+                  prices={prices.filter((p: Price) => p.cruise_itinerary_id === editingId)}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingId(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -514,7 +644,10 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" colSpan={2}>Departures</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departures</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -524,6 +657,8 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cabins</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
@@ -583,6 +718,48 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                         </div>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-2">
+                        {cabinsStatus === 'loading' ? (
+                          <span className="text-gray-400 text-sm">Loading cabins...</span>
+                        ) : prices && prices.length > 0 ? (
+                          prices
+                            .filter(price => {
+                              console.log(`Checking price for itinerary ${itinerary.id}:`, price)
+                              return price.cruise_itinerary_id === itinerary.id
+                            })
+                            .map(price => {
+                              const cabin = cabins.find(c => {
+                                console.log(`Looking for cabin ${price.cruise_cabin_id} in:`, cabins)
+                                return c.id === price.cruise_cabin_id
+                              })
+                              console.log(`Found cabin for price ${price.id}:`, cabin)
+                              return (
+                                <div key={price.id} className="text-sm">
+                                  {cabin?.name || `Cabin ${price.cruise_cabin_id}`}
+                                </div>
+                              )
+                            })
+                        ) : (
+                          <span className="text-gray-400 text-sm">No prices set</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-2">
+                        {prices && prices.length > 0 ? (
+                          prices
+                            .filter(price => price.cruise_itinerary_id === itinerary.id)
+                            .map((price) => (
+                              <div key={price.id} className="text-sm text-green-600">
+                                ${price.price.toFixed(2)}
+                              </div>
+                            ))
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(itinerary.created_at).toLocaleDateString()}
                     </td>
@@ -612,6 +789,31 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           </table>
         </div>
       </div>
+
+      {showPricesForm && selectedItinerary && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Gestionar Precios - {selectedItinerary.name}</h3>
+              <button
+                onClick={() => {
+                  setShowPricesForm(false)
+                  setSelectedItinerary(null)
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+            <ItineraryPricesForm
+              cruiseId={cruiseId}
+              itineraryId={selectedItinerary.id}
+              cabins={cabins}
+              prices={prices.filter(p => p.cruise_itinerary_id === selectedItinerary.id)}
+            />
+          </div>
+        </div>
+      )}
 
       {isAddingDeparture && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
