@@ -11,6 +11,11 @@ interface ItinerariesListProps {
   cruiseId: number
 }
 
+interface ApiError {
+  status?: number
+  message?: string
+}
+
 interface ItineraryFormData {
   name: string
   days: string
@@ -53,30 +58,49 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   useEffect(() => {
     const loadDepartures = async () => {
       if (itineraries && itineraries.length > 0) {
-        // Limpiar los departures existentes antes de cargar los nuevos
-        dispatch({ type: 'departures/clearDepartures' })
-        
-        // Crear un array de promesas para todas las llamadas de departures
-        const departurePromises = itineraries.map(itinerary => 
-          dispatch(fetchDepartures({ cruiseId, itineraryId: itinerary.id }))
-        )
-        
-        // Esperar a que todas las promesas se completen
-        await Promise.all(departurePromises)
+        try {
+          // Limpiar los departures existentes antes de cargar los nuevos
+          dispatch({ type: 'departures/clearDepartures' })
+          
+          // Cargar los departures uno por uno para mejor manejo de errores
+          for (const itinerary of itineraries) {
+            try {
+              const result = await dispatch(fetchDepartures({ 
+                cruiseId, 
+                itineraryId: itinerary.id 
+              })).unwrap()
+              
+              // Si no hay departures, no mostrar error
+              if (!result || result.length === 0) {
+                continue
+              }
+            } catch (error: unknown) {
+              const apiError = error as ApiError
+              // Solo mostrar error si no es un 404 (no encontrado)
+              if (apiError?.status !== 404) {
+                console.error(`Error loading departures for itinerary ${itinerary.id}:`, error)
+              }
+              continue
+            }
+          }
+        } catch (error) {
+          console.error('Error in loadDepartures:', error)
+        }
       }
     }
 
-    loadDepartures()
+    // Asegurarse de que el cruiseId sea válido antes de cargar
+    if (cruiseId > 0) {
+      loadDepartures()
+    }
   }, [dispatch, cruiseId, itineraries])
 
-  const calculateDays = (startDate: string, endDate: string) => {
-    if (!startDate || !endDate) return ''
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays.toString()
-  }
+  // Añadir un useEffect adicional para recargar cuando cambia el cruiseId
+  useEffect(() => {
+    if (cruiseId > 0) {
+      dispatch(fetchItineraries(cruiseId))
+    }
+  }, [dispatch, cruiseId])
 
   const handleDateChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -84,6 +108,14 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     newDepartures[index] = {
       ...newDepartures[index],
       [name]: value
+    }
+
+    // Si se cambia la fecha de inicio, calcular automáticamente la fecha de fin
+    if (name === 'start_date' && value && formData.days) {
+      const startDate = new Date(value + 'T00:00:00')
+      const endDate = new Date(startDate)
+      endDate.setDate(startDate.getDate() + parseInt(formData.days) - 1)
+      newDepartures[index].end_date = endDate.toISOString().split('T')[0]
     }
     
     // Si es el último departure y tiene fechas, añadir uno nuevo vacío
@@ -96,15 +128,6 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       departures: newDepartures
     }
     setFormData(newFormData)
-
-    // Calcular días automáticamente si ambas fechas están presentes
-    if (newDepartures[index].start_date && newDepartures[index].end_date) {
-      const days = calculateDays(newDepartures[index].start_date, newDepartures[index].end_date)
-      setFormData(prev => ({
-        ...prev,
-        days
-      }))
-    }
   }
 
   const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,17 +137,22 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       days: value
     }))
 
-    // Calcular fecha de fin automáticamente si hay fecha de inicio y días
-    if (formData.departures[0].start_date && value) {
-      const startDate = new Date(formData.departures[0].start_date)
-      const endDate = new Date(startDate)
-      endDate.setDate(startDate.getDate() + parseInt(value))
+    // Si hay fecha de inicio, actualizar todas las fechas de fin
+    if (value) {
       setFormData(prev => ({
         ...prev,
-        departures: prev.departures.map(departure => ({
-          ...departure,
-          end_date: endDate.toISOString().split('T')[0]
-        }))
+        departures: prev.departures.map(departure => {
+          if (departure.start_date) {
+            const startDate = new Date(departure.start_date + 'T00:00:00')
+            const endDate = new Date(startDate)
+            endDate.setDate(startDate.getDate() + parseInt(value) - 1)
+            return {
+              ...departure,
+              end_date: endDate.toISOString().split('T')[0]
+            }
+          }
+          return departure
+        })
       }))
     }
   }
@@ -162,27 +190,20 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
         // Obtener los departures existentes
         const existingDepartures = departures.filter(d => d.cruise_itinerary_id === editingId)
         
-        // Eliminar los departures que ya no están en el formulario
+        // Eliminar todos los departures existentes
         for (const existingDeparture of existingDepartures) {
-          const stillExists = formData.departures.some(d => 
-            d.start_date === existingDeparture.start_date.split('T')[0] &&
-            d.end_date === existingDeparture.end_date.split('T')[0]
-          )
-          
-          if (!stillExists) {
-            try {
-              await dispatch(deleteDeparture({
-                cruiseId,
-                itineraryId: editingId,
-                departureId: existingDeparture.id
-              })).unwrap()
-            } catch (error) {
-              console.error('Error deleting departure:', error)
-            }
+          try {
+            await dispatch(deleteDeparture({
+              cruiseId,
+              itineraryId: editingId,
+              departureId: existingDeparture.id
+            })).unwrap()
+          } catch (error) {
+            console.error('Error deleting departure:', error)
           }
         }
 
-        // Crear o actualizar los departures restantes
+        // Crear los nuevos departures
         const validDepartures = formData.departures.filter(d => 
           d.start_date && d.end_date && 
           new Date(d.start_date) <= new Date(d.end_date)
@@ -203,6 +224,12 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
             continue
           }
         }
+
+        // Recargar los departures después de actualizar
+        await dispatch(fetchDepartures({ 
+          cruiseId, 
+          itineraryId: editingId 
+        })).unwrap()
       } else {
         // Crear nuevo itinerario
         const response = await dispatch(createItinerary({
@@ -278,21 +305,13 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     
     // Crear el array de departures con las fechas existentes
     const departuresData = itineraryDepartures.map(departure => {
-      // Ajustar las fechas para evitar el desplazamiento de un día
+      // Asegurarse de que las fechas se formateen correctamente
       const startDate = new Date(departure.start_date)
       const endDate = new Date(departure.end_date)
       
-      // Formatear las fechas en YYYY-MM-DD
-      const formatDate = (date: Date) => {
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-      }
-      
       return {
-        start_date: formatDate(startDate),
-        end_date: formatDate(endDate)
+        start_date: startDate.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0]
       }
     })
     
@@ -303,6 +322,17 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       name: itinerary.name,
       days: itinerary.days.toString(),
       departures: departuresData
+    })
+  }
+
+  // Función auxiliar para formatear fechas
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString) return ''
+    const date = new Date(dateString + 'T00:00:00')
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     })
   }
 
@@ -322,6 +352,40 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       ...prev,
       departures: newDepartures
     }))
+  }
+
+  const handleAddDeparture = async () => {
+    if (!editingId) return
+
+    // Obtener el último departure del formulario (el que está vacío)
+    const lastDeparture = formData.departures[formData.departures.length - 1]
+    
+    // Verificar si tiene fechas válidas
+    if (lastDeparture.start_date && lastDeparture.end_date && 
+        new Date(lastDeparture.start_date) <= new Date(lastDeparture.end_date)) {
+      try {
+        // Crear el nuevo departure
+        await dispatch(createDeparture({
+          cruiseId,
+          itineraryId: editingId,
+          departureData: {
+            start_date: lastDeparture.start_date,
+            end_date: lastDeparture.end_date
+          }
+        })).unwrap()
+
+        // Actualizar el formulario
+        setFormData(prev => ({
+          ...prev,
+          departures: [
+            ...prev.departures.slice(0, -1), // Mantener todos excepto el último
+            { start_date: '', end_date: '' } // Añadir un nuevo departure vacío
+          ]
+        }))
+      } catch (error) {
+        console.error('Error adding departure:', error)
+      }
+    }
   }
 
   return (
@@ -370,7 +434,18 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           </div>
 
           <div className="mt-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Departures</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium text-gray-900">Departures</h3>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleAddDeparture}
+                  className="btn btn-secondary text-sm"
+                >
+                  Add Departure
+                </button>
+              )}
+            </div>
             <div className="space-y-4">
               {formData.departures.map((departure, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg shadow-sm relative">
@@ -489,7 +564,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                             .filter(departure => departure.cruise_itinerary_id === itinerary.id)
                             .map((departure) => (
                               <div key={departure.id} className="text-sm">
-                                {new Date(departure.start_date).toLocaleDateString()}
+                                {formatDisplayDate(departure.start_date)}
                               </div>
                             ))}
                         </div>
@@ -502,7 +577,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                             .filter(departure => departure.cruise_itinerary_id === itinerary.id)
                             .map((departure) => (
                               <div key={departure.id} className="text-sm">
-                                {new Date(departure.end_date).toLocaleDateString()}
+                                {formatDisplayDate(departure.end_date)}
                               </div>
                             ))}
                         </div>
