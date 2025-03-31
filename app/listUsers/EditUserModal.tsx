@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { User } from './actions'
-import { useAppDispatch, useAppSelector } from '../hooks'
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -13,17 +12,16 @@ interface EditUserModalProps {
 }
 
 interface FormData {
-  name: string;
-  email: string;
-  roles: string;
+  name: string
+  email: string
+  roles: string
 }
 
 export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalProps) {
-  const dispatch = useAppDispatch()
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    roles: '',
+    roles: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
