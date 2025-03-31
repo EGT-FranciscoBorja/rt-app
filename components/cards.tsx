@@ -1,7 +1,7 @@
 import React from 'react'
 import { CardInfo } from '../types'
 import { GiShipWheel } from "react-icons/gi";
-import { FaHotel } from "react-icons/fa6";
+import { FaHotel, FaUserShield } from "react-icons/fa6";
 import { PiSunHorizonBold } from "react-icons/pi";
 import Link from 'next/link'
 
@@ -27,12 +27,20 @@ const cards_info = (): CardInfo[] => [
     description: 'Availibility and prices for activities in Ecuador',
     icon: <PiSunHorizonBold />,
   },
+  {
+    id: 4,
+    path: '/listUsers',
+    title: 'Users',
+    description: 'Users of the system',
+    icon: <FaUserShield />,
+
+  },
 ]
 
 const cards = () => {
   return (
     <div className='w-full'>
-      <div className='grid grid-cols-3 gap-4 sm:grid-cols-1 lg:grid-cols-3'>
+      <div className='grid grid-cols-4 gap-4 sm:grid-cols-1 lg:grid-cols-4'>
         {cards_info().map((card) => (
           <Link
             key={card.id}

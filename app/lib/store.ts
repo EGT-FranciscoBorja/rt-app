@@ -3,13 +3,15 @@ import cruisesReducer from './features/crusies/cruisesSlice'
 import cabinsReducer from './features/cabins/cabinsSlice'
 import itinerariesReducer from './features/itineraries/itinerariesSlice'
 import departuresReducer from './features/departures/departuresSlice'
+import usersReducer from './features/users/usersSlice'
 
 export const store = configureStore({
   reducer: {
     cruises: cruisesReducer,
     cabins: cabinsReducer,
     itineraries: itinerariesReducer,
-    departures: departuresReducer
+    departures: departuresReducer,
+    users: usersReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
