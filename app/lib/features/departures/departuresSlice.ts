@@ -98,7 +98,13 @@ export const deleteDeparture = createAsyncThunk(
 const departuresSlice = createSlice({
   name: 'departures',
   initialState,
-  reducers: {},
+  reducers: {
+    clearDepartures: (state) => {
+      state.items = []
+      state.status = 'idle'
+      state.error = null
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchDepartures.pending, (state) => {
@@ -107,7 +113,10 @@ const departuresSlice = createSlice({
       })
       .addCase(fetchDepartures.fulfilled, (state, action) => {
         state.status = 'succeeded'
-        state.items = action.payload
+        state.items = state.items.filter(
+          item => item.cruise_itinerary_id !== action.meta.arg.itineraryId
+        )
+        state.items = [...state.items, ...action.payload]
       })
       .addCase(fetchDepartures.rejected, (state, action) => {
         state.status = 'failed'

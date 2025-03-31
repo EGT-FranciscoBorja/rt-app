@@ -14,6 +14,8 @@ interface ItinerariesListProps {
 interface ItineraryFormData {
   name: string
   days: string
+  start_date: string
+  end_date: string
 }
 
 interface DepartureFormData {
@@ -32,7 +34,9 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const [editingDepartureId, setEditingDepartureId] = useState<number | null>(null)
   const [formData, setFormData] = useState<ItineraryFormData>({
     name: '',
-    days: ''
+    days: '',
+    start_date: '',
+    end_date: ''
   })
   const [departureFormData, setDepartureFormData] = useState<DepartureFormData>({
     start_date: '',
@@ -46,13 +50,69 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   }, [dispatch, status, cruiseId])
 
   useEffect(() => {
-    if (itineraries && itineraries.length > 0) {
-      // Fetch departures for each itinerary
-      itineraries.forEach(itinerary => {
-        dispatch(fetchDepartures({ cruiseId, itineraryId: itinerary.id }))
-      })
+    const loadDepartures = async () => {
+      if (itineraries && itineraries.length > 0) {
+        // Limpiar los departures existentes antes de cargar los nuevos
+        dispatch({ type: 'departures/clearDepartures' })
+        
+        // Crear un array de promesas para todas las llamadas de departures
+        const departurePromises = itineraries.map(itinerary => 
+          dispatch(fetchDepartures({ cruiseId, itineraryId: itinerary.id }))
+        )
+        
+        // Esperar a que todas las promesas se completen
+        await Promise.all(departurePromises)
+      }
     }
+
+    loadDepartures()
   }, [dispatch, cruiseId, itineraries])
+
+  const calculateDays = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return ''
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays.toString()
+  }
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    const newFormData = {
+      ...formData,
+      [name]: value
+    }
+    setFormData(newFormData)
+
+    // Calcular días automáticamente si ambas fechas están presentes
+    if (newFormData.start_date && newFormData.end_date) {
+      const days = calculateDays(newFormData.start_date, newFormData.end_date)
+      setFormData(prev => ({
+        ...prev,
+        days
+      }))
+    }
+  }
+
+  const handleDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      days: value
+    }))
+
+    // Calcular fecha de fin automáticamente si hay fecha de inicio y días
+    if (formData.start_date && value) {
+      const startDate = new Date(formData.start_date)
+      const endDate = new Date(startDate)
+      endDate.setDate(startDate.getDate() + parseInt(value))
+      setFormData(prev => ({
+        ...prev,
+        end_date: endDate.toISOString().split('T')[0]
+      }))
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -82,16 +142,40 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
             days: parseInt(formData.days)
           }
         })).unwrap()
+
+        // Crear o actualizar el departure
+        if (formData.start_date && formData.end_date) {
+          await dispatch(createDeparture({
+            cruiseId,
+            itineraryId: editingId,
+            departureData: {
+              start_date: formData.start_date,
+              end_date: formData.end_date
+            }
+          })).unwrap()
+        }
       } else {
-        await dispatch(createItinerary({
+        const response = await dispatch(createItinerary({
           cruiseId,
           itineraryData: {
             name: formData.name,
             days: parseInt(formData.days)
           }
         })).unwrap()
+
+        // Crear el departure para el nuevo itinerario
+        if (formData.start_date && formData.end_date) {
+          await dispatch(createDeparture({
+            cruiseId,
+            itineraryId: response.id,
+            departureData: {
+              start_date: formData.start_date,
+              end_date: formData.end_date
+            }
+          })).unwrap()
+        }
       }
-      setFormData({ name: '', days: '' })
+      setFormData({ name: '', days: '', start_date: '', end_date: '' })
       setEditingId(null)
       setIsAdding(false)
     } catch (error) {
@@ -130,7 +214,9 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     setEditingId(itinerary.id)
     setFormData({
       name: itinerary.name,
-      days: itinerary.days.toString()
+      days: itinerary.days.toString(),
+      start_date: '',
+      end_date: ''
     })
   }
 
@@ -152,7 +238,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           onClick={() => {
             setIsAdding(true)
             setEditingId(null)
-            setFormData({ name: '', days: '' })
+            setFormData({ name: '', days: '', start_date: '', end_date: '' })
           }}
           className="btn btn-primary flex items-center gap-2"
         >
@@ -181,9 +267,31 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                 type="number"
                 name="days"
                 value={formData.days}
-                onChange={handleInputChange}
+                onChange={handleDaysChange}
                 className="input"
                 min="1"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                name="start_date"
+                value={formData.start_date}
+                onChange={handleDateChange}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input
+                type="date"
+                name="end_date"
+                value={formData.end_date}
+                onChange={handleDateChange}
+                className="input"
                 required
               />
             </div>
@@ -194,7 +302,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
               onClick={() => {
                 setIsAdding(false)
                 setEditingId(null)
-                setFormData({ name: '', days: '' })
+                setFormData({ name: '', days: '', start_date: '', end_date: '' })
               }}
               className="btn btn-secondary"
             >
