@@ -6,6 +6,7 @@ import itinerariesReducer from './features/itineraries/itinerariesSlice'
 import departuresReducer from './features/departures/departuresSlice'
 import usersReducer from './features/users/usersSlice'
 import itinerariesPricesReducer from './features/itineraries/itinerariesPricesSlice'
+import chartersReducer from './features/charters/chartersSlice'
 
 // Habilitar el plugin MapSet de Immer
 enableMapSet()
@@ -109,6 +110,19 @@ export interface RootState {
   departures: DepartureState
   users: UserState
   itinerariesPrices: PriceState
+  charters: {
+    items: Array<{
+      id: number
+      name: string
+      description: string
+      persons: number
+      price: number
+      created_at: string
+      updated_at: string
+    }>
+    status: 'idle' | 'loading' | 'succeeded' | 'failed'
+    error: string | null
+  }
 }
 
 export const store = configureStore({
@@ -118,7 +132,8 @@ export const store = configureStore({
     itineraries: itinerariesReducer,
     departures: departuresReducer,
     users: usersReducer,
-    itinerariesPrices: itinerariesPricesReducer
+    itinerariesPrices: itinerariesPricesReducer,
+    charters: chartersReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

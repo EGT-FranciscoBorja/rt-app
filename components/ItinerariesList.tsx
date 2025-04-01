@@ -8,6 +8,7 @@ import { fetchPrices, selectPrices, updatePrice } from '@/app/lib/features/itine
 import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/features/cabins/cabinsSlice'
 import { FaRegEdit, FaPlus, FaTimes } from 'react-icons/fa'
 import { RiDeleteBin6Line } from 'react-icons/ri'
+import Link from 'next/link'
 import ItineraryPricesForm from './ItineraryPricesForm'
 
 interface ItinerariesListProps {
@@ -727,7 +728,14 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                 itineraries.map((itinerary) => (
                   <tr key={itinerary.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{itinerary.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        <Link 
+                          href={`/charters?cruiseId=${cruiseId}&itineraryId=${itinerary.id}`}
+                          className="text-indigo-600 hover:text-indigo-900 hover:underline"
+                        >
+                          {itinerary.name}
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {itinerary.days} days
