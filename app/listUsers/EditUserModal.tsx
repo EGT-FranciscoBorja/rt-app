@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { User } from './actions'
-import { useAppDispatch, useAppSelector } from '../hooks'
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -15,15 +14,14 @@ interface EditUserModalProps {
 interface FormData {
   name: string;
   email: string;
-  roles: string;
+  roles: string[];
 }
 
 export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalProps) {
-  const dispatch = useAppDispatch()
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    roles: '',
+    roles: [],
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -91,12 +89,12 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
               value={formData.email || ''}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="input"
-              rows={4}
               required
               disabled={isSubmitting}
             />
@@ -104,14 +102,19 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <input
-              type="url"
-              value={formData.roles || ''}
-              onChange={(e) => setFormData({ ...formData, roles: e.target.value })}
+            <select
+              value={formData.roles || []}
+              onChange={(e) => setFormData({ ...formData, roles: Array.from(e.target.selectedOptions, option => option.value) })}
               className="input"
               required
               disabled={isSubmitting}
-            />
+              multiple
+            >
+              <option value="admin">Admin</option>
+              <option value="sales">Sales</option>
+              <option value="super-admin">SuperAdmin</option>
+
+            </select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
