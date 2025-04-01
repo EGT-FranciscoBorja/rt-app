@@ -31,7 +31,7 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
   const [selectedCharter, setSelectedCharter] = React.useState<typeof charters[0] | null>(null)
 
   const filteredCharters = React.useMemo(() => {
-    if (!Array.isArray(charters)) return []
+    if (!Array.isArray(charters) || charters.length === 0) return []
     
     return charters.filter(charter => {
       if (!charter || typeof charter !== 'object') return false
@@ -119,6 +119,8 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
               
               const price = typeof charter.price === 'number' ? charter.price : 0
               const persons = typeof charter.persons === 'number' ? charter.persons : 0
+              
+              if (!charter.id) return null
               
               return (
                 <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
