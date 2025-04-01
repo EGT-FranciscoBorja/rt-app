@@ -20,13 +20,13 @@ export async function login(formData: FormData) {
     }
 
     // Obtener las cookies de la respuesta
-    const cookies = csrfResponse.headers.get('set-cookie')
-    if (!cookies) {
+    const responseCookies = csrfResponse.headers.get('set-cookie')
+    if (!responseCookies) {
       throw new Error('No se recibieron cookies del servidor')
     }
 
     // Extraer el token XSRF-TOKEN de las cookies
-    const xsrfToken = cookies.split(';')
+    const xsrfToken = responseCookies.split(';')
       .find(cookie => cookie.trim().startsWith('XSRF-TOKEN='))
       ?.split('=')[1]
 
