@@ -81,10 +81,10 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     const loadDepartures = async () => {
       if (itineraries && itineraries.length > 0) {
         try {
-          // Limpiar los departures existentes antes de cargar los nuevos
+          // Clear existing departures before loading new ones
           dispatch({ type: 'departures/clearDepartures' })
           
-          // Cargar los departures uno por uno para mejor manejo de errores
+          // Load departures one by one for better error handling
           for (const itinerary of itineraries) {
             try {
               const result = await dispatch(fetchDepartures({ 
@@ -92,13 +92,13 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                 itineraryId: itinerary.id 
               })).unwrap()
               
-              // Si no hay departures, no mostrar error
+              // If no departures, don't show error
               if (!result || result.length === 0) {
                 continue
               }
             } catch (error: unknown) {
               const apiError = error as ApiError
-              // Solo mostrar error si no es un 404 (no encontrado)
+              // Only show error if not 404 (not found)
               if (apiError?.status !== 404) {
                 console.error(`Error loading departures for itinerary ${itinerary.id}:`, error)
               }
@@ -111,7 +111,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       }
     }
 
-    // Asegurarse de que el cruiseId sea válido antes de cargar
+    // Make sure cruiseId is valid before loading
     if (cruiseId > 0) {
       loadDepartures()
     }
@@ -119,35 +119,37 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
 
   useEffect(() => {
     const loadPrices = async () => {
-      if (itineraries && itineraries.length > 0 && cabinsStatus === 'succeeded') {
+      if (itineraries && itineraries.length > 0 && cabinsStatus === 'succeeded' && cabins.length > 0) {
         try {
-          console.log('Iniciando carga de precios...')
-          // Limpiar los precios existentes antes de cargar los nuevos
+          console.log('Starting price loading...')
+          // Clear existing prices before loading new ones
           dispatch({ type: 'itinerariesPrices/clearPrices' })
           
-          // Cargar los precios para cada itinerario
+          // Load prices for each itinerary
           for (const itinerary of itineraries) {
             try {
-              console.log(`Cargando precios para el itinerario ${itinerary.id}`)
+              console.log(`Loading prices for itinerary ${itinerary.id}`)
               const result = await dispatch(fetchPrices({ 
                 cruiseId, 
                 itineraryId: itinerary.id 
               })).unwrap()
               
-              console.log(`Precios cargados para itinerario ${itinerary.id}:`, result)
-              
-              // Si no hay precios, no mostrar error
               if (!result || result.length === 0) {
-                console.log(`No hay precios para el itinerario ${itinerary.id}`)
+                console.log(`No prices for itinerary ${itinerary.id}`)
                 continue
               }
 
-              // Verificar que los precios se agregaron correctamente al estado
+              // Log the prices received from the API
+              console.log(`Prices received for itinerary ${itinerary.id}:`, result)
+
+              // Verify prices were added correctly to state
               if (Array.isArray(result)) {
                 result.forEach(price => {
-                  console.log(`Precio agregado al estado:`, {
+                  const cabin = cabins.find(c => c.id === price.cruise_cabin_id)
+                  console.log(`Price added to state:`, {
                     id: price.id,
                     cabin_id: price.cruise_cabin_id,
+                    cabin_name: cabin?.name || 'Not found',
                     itinerary_id: price.cruise_itinerary_id,
                     price: price.price
                   })
@@ -155,7 +157,6 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
               }
             } catch (error: unknown) {
               const apiError = error as ApiError
-              // Solo mostrar error si no es un 404 (no encontrado)
               if (apiError?.status !== 404) {
                 console.error(`Error loading prices for itinerary ${itinerary.id}:`, error)
               }
@@ -171,7 +172,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     if (cruiseId > 0) {
       loadPrices()
     }
-  }, [dispatch, cruiseId, itineraries, cabinsStatus])
+  }, [dispatch, cruiseId, itineraries, cabinsStatus, cabins])
 
   // Añadir un useEffect para debug específico de precios
   useEffect(() => {
@@ -181,7 +182,8 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     console.log('First price:', prices?.[0])
     console.log('Cabins status:', cabinsStatus)
     console.log('Cabins:', cabins)
-  }, [prices, cabinsStatus, cabins])
+    console.log('Itineraries:', itineraries)
+  }, [prices, cabinsStatus, cabins, itineraries])
 
   // Añadir un console.log para debug
   useEffect(() => {
@@ -191,7 +193,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     console.log('Cabins status:', cabinsStatus)
     console.log('Current itineraries:', itineraries)
     
-    // Debug específico para precios y cabinas
+    // Specific debug for prices and cabins
     if (prices && prices.length > 0 && cabins && cabins.length > 0) {
       console.log('=== PRICES AND CABINS MATCHING ===')
       prices.forEach(price => {
@@ -204,7 +206,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
         console.log('---')
       })
     } else {
-      console.log('No hay precios o cabinas disponibles para hacer el matching')
+      console.log('No prices or cabins available for matching')
     }
   }, [prices, cabins, cabinsStatus, itineraries])
 
@@ -229,7 +231,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       [name]: value
     }
 
-    // Si se cambia la fecha de inicio, calcular automáticamente la fecha de fin
+    // If start date changes, automatically calculate end date
     if (name === 'start_date' && value && formData.days) {
       const startDate = new Date(value + 'T00:00:00')
       const endDate = new Date(startDate)
@@ -237,7 +239,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       newDepartures[index].end_date = endDate.toISOString().split('T')[0]
     }
     
-    // Si es el último departure y tiene fechas, añadir uno nuevo vacío
+    // If it's the last departure and has dates, add a new empty one
     if (index === newDepartures.length - 1 && value) {
       newDepartures.push({ start_date: '', end_date: '' })
     }
@@ -256,7 +258,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       days: value
     }))
 
-    // Si hay fecha de inicio, actualizar todas las fechas de fin
+    // If there's a start date, update all end dates
     if (value) {
       setFormData(prev => ({
         ...prev,
@@ -296,7 +298,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     e.preventDefault()
     try {
       if (editingId) {
-        // Primero actualizar el itinerario
+        // First update the itinerary
         await dispatch(updateItinerary({
           cruiseId,
           itineraryId: editingId,
@@ -306,10 +308,10 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         })).unwrap()
 
-        // Obtener los departures existentes
+        // Get existing departures
         const existingDepartures = departures.filter(d => d.cruise_itinerary_id === editingId)
         
-        // Eliminar todos los departures existentes
+        // Delete all existing departures
         for (const existingDeparture of existingDepartures) {
           try {
             await dispatch(deleteDeparture({
@@ -322,7 +324,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         }
 
-        // Crear los nuevos departures
+        // Create new departures
         const validDepartures = formData.departures.filter(d => 
           d.start_date && d.end_date && 
           new Date(d.start_date) <= new Date(d.end_date)
@@ -344,13 +346,13 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         }
 
-        // Recargar los departures después de actualizar
+        // Reload departures after updating
         await dispatch(fetchDepartures({ 
           cruiseId, 
           itineraryId: editingId 
         })).unwrap()
       } else {
-        // Crear nuevo itinerario
+        // Create new itinerary
         const response = await dispatch(createItinerary({
           cruiseId,
           itineraryData: {
@@ -359,7 +361,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         })).unwrap()
 
-        // Crear los departures para el nuevo itinerario
+        // Create departures for the new itinerary
         const validDepartures = formData.departures.filter(d => 
           d.start_date && d.end_date && 
           new Date(d.start_date) <= new Date(d.end_date)
@@ -419,12 +421,12 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const handleEdit = (itinerary: { id: number, name: string, days: number }) => {
     setEditingId(itinerary.id)
     
-    // Buscar todos los departures correspondientes a este itinerario
+    // Find all departures for this itinerary
     const itineraryDepartures = departures.filter(d => d.cruise_itinerary_id === itinerary.id)
     
-    // Crear el array de departures con las fechas existentes
+    // Create departures array with existing dates
     const departuresData = itineraryDepartures.map(departure => {
-      // Asegurarse de que las fechas se formateen correctamente
+      // Make sure dates are formatted correctly
       const startDate = new Date(departure.start_date)
       const endDate = new Date(departure.end_date)
       
@@ -434,7 +436,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       }
     })
     
-    // Añadir un departure vacío para permitir añadir uno nuevo
+    // Add an empty departure to allow adding a new one
     departuresData.push({ start_date: '', end_date: '' })
     
     setFormData({
@@ -445,11 +447,11 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     })
   }
 
-  // Función auxiliar para formatear fechas
+  // Helper function to format dates
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return ''
     const date = new Date(dateString + 'T00:00:00')
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -477,14 +479,14 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const handleAddDeparture = async () => {
     if (!editingId) return
 
-    // Obtener el último departure del formulario (el que está vacío)
+    // Get the last departure from the form (the empty one)
     const lastDeparture = formData.departures[formData.departures.length - 1]
     
-    // Verificar si tiene fechas válidas
+    // Check if it has valid dates
     if (lastDeparture.start_date && lastDeparture.end_date && 
         new Date(lastDeparture.start_date) <= new Date(lastDeparture.end_date)) {
       try {
-        // Crear el nuevo departure
+        // Create the new departure
         await dispatch(createDeparture({
           cruiseId,
           itineraryId: editingId,
@@ -494,12 +496,12 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         })).unwrap()
 
-        // Actualizar el formulario
+        // Update the form
         setFormData(prev => ({
           ...prev,
           departures: [
-            ...prev.departures.slice(0, -1), // Mantener todos excepto el último
-            { start_date: '', end_date: '' } // Añadir un nuevo departure vacío
+            ...prev.departures.slice(0, -1), // Keep all except the last one
+            { start_date: '', end_date: '' } // Add a new empty departure
           ]
         }))
       } catch (error) {
@@ -612,7 +614,10 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                 <ItineraryPricesForm
                   cruiseId={cruiseId}
                   itineraryId={editingId || 0}
-                  cabins={[]} // You'll need to pass the cabins data here
+                  cabins={cabins.map((cabin) => ({
+                    id: cabin.id,
+                    name: cabin.name
+                  }))}
                   prices={prices.filter((p: Price) => p.cruise_itinerary_id === editingId)}
                 />
               </div>
@@ -722,41 +727,35 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                       <div className="space-y-2">
                         {cabinsStatus === 'loading' ? (
                           <span className="text-gray-400 text-sm">Loading cabins...</span>
-                        ) : prices && prices.length > 0 ? (
-                          prices
-                            .filter(price => {
-                              console.log(`Checking price for itinerary ${itinerary.id}:`, price)
-                              return price.cruise_itinerary_id === itinerary.id
-                            })
-                            .map(price => {
-                              const cabin = cabins.find(c => {
-                                console.log(`Looking for cabin ${price.cruise_cabin_id} in:`, cabins)
-                                return c.id === price.cruise_cabin_id
-                              })
-                              console.log(`Found cabin for price ${price.id}:`, cabin)
-                              return (
-                                <div key={price.id} className="text-sm">
-                                  {cabin?.name || `Cabin ${price.cruise_cabin_id}`}
-                                </div>
-                              )
-                            })
+                        ) : cabins && cabins.length > 0 ? (
+                          cabins.map(cabin => (
+                            <div key={cabin.id} className="text-sm">
+                              {cabin.name}
+                            </div>
+                          ))
                         ) : (
-                          <span className="text-gray-400 text-sm">No prices set</span>
+                          <span className="text-gray-400 text-sm">No cabins available</span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-2">
-                        {prices && prices.length > 0 ? (
-                          prices
-                            .filter(price => price.cruise_itinerary_id === itinerary.id)
-                            .map((price) => (
-                              <div key={price.id} className="text-sm text-green-600">
-                                ${price.price.toFixed(2)}
+                        {cabinsStatus === 'loading' ? (
+                          <span className="text-gray-400 text-sm">Loading prices...</span>
+                        ) : cabins && cabins.length > 0 ? (
+                          cabins.map(cabin => {
+                            const price = prices.find(p => 
+                              p.cruise_itinerary_id === itinerary.id && 
+                              p.cruise_cabin_id === cabin.id
+                            )
+                            return (
+                              <div key={cabin.id} className="text-sm text-green-600">
+                                {price ? `$${price.price.toFixed(2)}` : '-'}
                               </div>
-                            ))
+                            )
+                          })
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-gray-400 text-sm">No cabins available</span>
                         )}
                       </div>
                     </td>
@@ -794,7 +793,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Gestionar Precios - {selectedItinerary.name}</h3>
+              <h3 className="text-lg font-semibold">Manage Prices - {selectedItinerary.name}</h3>
               <button
                 onClick={() => {
                   setShowPricesForm(false)

@@ -25,7 +25,12 @@ const initialState: PricesState = {
 export const fetchPrices = createAsyncThunk(
   'itinerariesPrices/fetchPrices',
   async ({ cruiseId, itineraryId }: { cruiseId: number; itineraryId: number }) => {
-    const response = await axios.get(`https://api.rtapi.lat/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price`)
+    const response = await axios.get(`/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      }
+    })
     return response.data.data
   }
 )
@@ -33,7 +38,12 @@ export const fetchPrices = createAsyncThunk(
 export const createPrice = createAsyncThunk(
   'itinerariesPrices/createPrice',
   async ({ cruiseId, itineraryId, priceData }: { cruiseId: number; itineraryId: number; priceData: { cruise_cabin_id: number; price: number } }) => {
-    const response = await axios.post(`https://api.rtapi.lat/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price`, priceData)
+    const response = await axios.post(`/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price`, priceData, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      }
+    })
     return response.data.data
   }
 )
@@ -41,7 +51,12 @@ export const createPrice = createAsyncThunk(
 export const updatePrice = createAsyncThunk(
   'itinerariesPrices/updatePrice',
   async ({ cruiseId, itineraryId, priceId, priceData }: { cruiseId: number; itineraryId: number; priceId: number; priceData: { price: number } }) => {
-    const response = await axios.put(`https://api.rtapi.lat/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price/${priceId}`, priceData)
+    const response = await axios.put(`/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price/${priceId}`, priceData, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      }
+    })
     return response.data.data
   }
 )
@@ -49,7 +64,12 @@ export const updatePrice = createAsyncThunk(
 export const deletePrice = createAsyncThunk(
   'itinerariesPrices/deletePrice',
   async ({ cruiseId, itineraryId, priceId }: { cruiseId: number; itineraryId: number; priceId: number }) => {
-    await axios.delete(`https://api.rtapi.lat/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price/${priceId}`)
+    await axios.delete(`/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price/${priceId}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      }
+    })
     return priceId
   }
 )
