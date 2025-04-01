@@ -793,7 +793,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
                             )
                             return (
                               <div key={cabin.id} className="text-sm text-green-600">
-                                {price ? `$${price.price.toFixed(2)}` : '-'}
+                                {price && typeof price.price === 'number' ? `$${price.price.toFixed(2)}` : '-'}
                               </div>
                             )
                           })

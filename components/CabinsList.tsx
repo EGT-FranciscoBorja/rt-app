@@ -72,10 +72,10 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                       <div className="text-sm font-medium text-gray-900">{cabin.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cabin.quantity}
+                      {cabin.capacity}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${cabin.base_price.toLocaleString()}
+                      ${cabin.price.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(cabin.created_at).toLocaleDateString()}

@@ -31,20 +31,24 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
   const [selectedCharter, setSelectedCharter] = React.useState<typeof charters[0] | null>(null)
 
   const filteredCharters = React.useMemo(() => {
+    if (!Array.isArray(charters)) return []
+    
     return charters.filter(charter => {
-      if (filters.searchTerm && !charter.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+      if (!charter) return false
+      
+      if (filters.searchTerm && !charter.name?.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false
       }
-      if (filters.minPrice && charter.price < filters.minPrice) {
+      if (filters.minPrice && (typeof charter.price !== 'number' || charter.price < filters.minPrice)) {
         return false
       }
-      if (filters.maxPrice && charter.price > filters.maxPrice) {
+      if (filters.maxPrice && (typeof charter.price !== 'number' || charter.price > filters.maxPrice)) {
         return false
       }
-      if (filters.minPersons && charter.persons < filters.minPersons) {
+      if (filters.minPersons && (typeof charter.persons !== 'number' || charter.persons < filters.minPersons)) {
         return false
       }
-      if (filters.maxPersons && charter.persons > filters.maxPersons) {
+      if (filters.maxPersons && (typeof charter.persons !== 'number' || charter.persons > filters.maxPersons)) {
         return false
       }
       return true
@@ -78,6 +82,7 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
   }
 
   const handleEditClick = (charter: typeof charters[0]) => {
+    if (!charter) return
     setSelectedCharter(charter)
     setIsEditModalOpen(true)
   }
@@ -108,34 +113,44 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCharters.map(charter => (
-            <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">{charter.name}</h3>
-              <p className="text-gray-600 mb-2">{charter.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-primary font-semibold">
-                  ${charter.price.toLocaleString()}
-                </span>
-                <span className="text-gray-600">
-                  {charter.persons} persons
-                </span>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => handleEditClick(charter)}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteCharter(charter.id)}
-                  className="btn btn-danger btn-sm"
-                >
-                  Delete
-                </button>
-              </div>
+          {Array.isArray(filteredCharters) && filteredCharters.length > 0 ? (
+            filteredCharters.map(charter => {
+              if (!charter) return null
+              
+              return (
+                <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-2">{charter.name || 'Sin nombre'}</h3>
+                  <p className="text-gray-600 mb-2">{charter.description || 'Sin descripción'}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-primary font-semibold">
+                      ${typeof charter?.price === 'number' ? charter.price.toLocaleString() : '0'}
+                    </span>
+                    <span className="text-gray-600">
+                      {typeof charter?.persons === 'number' ? `${charter.persons} persons` : '0 persons'}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      onClick={() => handleEditClick(charter)}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCharter(charter.id)}
+                      className="btn btn-danger btn-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="col-span-full text-center text-gray-500">
+              No hay charters disponibles
             </div>
-          ))}
+          )}
         </div>
       </div>
 
