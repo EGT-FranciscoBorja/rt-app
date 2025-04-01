@@ -123,10 +123,10 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
                   <p className="text-gray-600 mb-2">{charter.description || 'Sin descripción'}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-primary font-semibold">
-                      ${typeof charter.price === 'number' ? charter.price.toLocaleString() : '0'}
+                      ${charter && typeof charter.price === 'number' ? charter.price.toLocaleString() : '0'}
                     </span>
                     <span className="text-gray-600">
-                      {typeof charter.persons === 'number' ? `${charter.persons} persons` : '0 persons'}
+                      {charter && typeof charter.persons === 'number' ? `${charter.persons} persons` : '0 persons'}
                     </span>
                   </div>
                   <div className="mt-4 flex gap-2">
