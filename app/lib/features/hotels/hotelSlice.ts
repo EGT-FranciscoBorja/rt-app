@@ -33,12 +33,7 @@ const initialState: HotelState = {
 export const fetchHotels = createAsyncThunk(
   'hotels/fetchHotels',
   async (page: number = 1) => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel?page=${page}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-      },
-    })
+    const response = await fetch(`/api/hotels?page=${page}`)
     if (!response.ok) {
       throw new Error('Failed to fetch hotels')
     }
