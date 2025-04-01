@@ -10,7 +10,6 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchUsers, selectUsersStatus, selectUsers, selectPagination } from '../lib/features/users/usersSlice'
 import EditUserModal from './EditUserModal'
 import { handleEdit, handleDelete, User } from './actions'
-import Link from 'next/link'
 
 interface UserFilters {
   name: string
@@ -288,7 +287,7 @@ export default function ListUsersPage() {
               Download Data
             </button>
             <button 
-              onClick={() => router.push('/Users')}
+              onClick={() => router.push('/users')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <FaCloudUploadAlt className="text-lg" />
@@ -331,20 +330,16 @@ export default function ListUsersPage() {
                   Users.map((User) => (
                     <tr key={User.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          <Link href={`/Users/${User.id}/cabins`} className="text-blue-600 hover:text-blue-800">
-                            {User.name}
-                          </Link>
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{User.name}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 line-clamp-2">{User.email}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{User.roles}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{Array.isArray(User.roles) ? User.roles.join(', ') : User.roles}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleEditClick(User)}
+                            onClick={() => handleEditClick({...User, roles: Array.isArray(User.roles) ? User.roles : [User.roles]})}
                             className="text-blue-600 hover:text-blue-900"
                           >
                             <FaRegEdit className="text-lg" />
