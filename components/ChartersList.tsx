@@ -114,7 +114,7 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
               <p className="text-gray-600 mb-2">{charter.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-primary font-semibold">
-                  ${charter.price.toLocaleString()}
+                  ${charter.price ? charter.price.toLocaleString() : '0'}
                 </span>
                 <span className="text-gray-600">
                   {charter.persons} persons
