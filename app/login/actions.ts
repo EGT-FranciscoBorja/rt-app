@@ -2,11 +2,9 @@
 
 import { cookies } from 'next/headers'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
 export async function login(formData: FormData) {
   try {
-    const response = await fetch(`${API_URL}/api/v1/login`, {
+    const response = await fetch(`/api/v1/login`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',

@@ -75,7 +75,7 @@ export const fetchCruises = createAsyncThunk(
     try {
       console.log('Making API request with token:', API_TOKEN.substring(0, 10) + '...')
       
-      const response = await fetch(`/api/v1/cruise?${queryParams.toString()}`, {
+      const response = await fetch(`//api/v1/cruise?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
