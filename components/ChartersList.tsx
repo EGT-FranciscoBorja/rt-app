@@ -34,7 +34,7 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
     if (!Array.isArray(charters)) return []
     
     return charters.filter(charter => {
-      if (!charter) return false
+      if (!charter || typeof charter !== 'object') return false
       
       if (filters.searchTerm && !charter.name?.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false
@@ -115,7 +115,10 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.isArray(filteredCharters) && filteredCharters.length > 0 ? (
             filteredCharters.map(charter => {
-              if (!charter) return null
+              if (!charter || typeof charter !== 'object') return null
+              
+              const price = typeof charter.price === 'number' ? charter.price : 0
+              const persons = typeof charter.persons === 'number' ? charter.persons : 0
               
               return (
                 <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
@@ -123,10 +126,10 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
                   <p className="text-gray-600 mb-2">{charter.description || 'Sin descripción'}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-primary font-semibold">
-                      ${typeof charter?.price === 'number' ? charter.price.toLocaleString() : '0'}
+                      ${price.toLocaleString()}
                     </span>
                     <span className="text-gray-600">
-                      {typeof charter?.persons === 'number' ? `${charter.persons} persons` : '0 persons'}
+                      {persons} persons
                     </span>
                   </div>
                   <div className="mt-4 flex gap-2">
