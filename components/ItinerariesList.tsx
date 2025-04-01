@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchItineraries, selectItineraries, selectItinerariesStatus, createItinerary, updateItinerary, deleteItinerary } from '@/app/lib/features/itineraries/itinerariesSlice'
 import { fetchDepartures, selectDepartures, createDeparture, updateDeparture, deleteDeparture } from '@/app/lib/features/departures/departuresSlice'
-import { fetchPrices, selectPrices } from '@/app/lib/features/itineraries/itinerariesPricesSlice'
+import { fetchPrices, selectPrices, updatePrice } from '@/app/lib/features/itineraries/itinerariesPricesSlice'
 import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/features/cabins/cabinsSlice'
 import { FaRegEdit, FaPlus, FaTimes } from 'react-icons/fa'
 import { RiDeleteBin6Line } from 'react-icons/ri'
@@ -64,6 +64,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     departures: [{ start_date: '', end_date: '' }],
     prices: []
   })
+  const [editingPrices, setEditingPrices] = useState<Price[]>([])
   const [departureFormData, setDepartureFormData] = useState<DepartureFormData>({
     start_date: '',
     end_date: ''
@@ -346,8 +347,28 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           }
         }
 
-        // Reload departures after updating
+        // Update prices
+        for (const price of editingPrices) {
+          try {
+            const priceToUpdate = {
+              priceId: price.id,
+              priceData: { price: price.price }
+            }
+            console.log('Updating price:', priceToUpdate)
+            await dispatch(updatePrice(priceToUpdate)).unwrap()
+          } catch (error) {
+            console.error('Error updating price:', error)
+            continue
+          }
+        }
+
+        // Reload departures and prices after updating
         await dispatch(fetchDepartures({ 
+          cruiseId, 
+          itineraryId: editingId 
+        })).unwrap()
+
+        await dispatch(fetchPrices({ 
           cruiseId, 
           itineraryId: editingId 
         })).unwrap()
@@ -384,6 +405,7 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
         }
       }
       setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }], prices: [] })
+      setEditingPrices([])
       setEditingId(null)
       setIsAdding(false)
     } catch (error) {
@@ -439,11 +461,14 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
     // Add an empty departure to allow adding a new one
     departuresData.push({ start_date: '', end_date: '' })
     
+    // Set the current prices for editing
+    setEditingPrices(prices.filter(p => p.cruise_itinerary_id === itinerary.id))
+    
     setFormData({
       name: itinerary.name,
       days: itinerary.days.toString(),
       departures: departuresData,
-      prices: prices.filter(p => p.cruise_itinerary_id === itinerary.id)
+      prices: []
     })
   }
 
@@ -528,116 +553,126 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
       </div>
 
       {(isAdding || editingId) && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full">
-            <h2 className="text-xl font-semibold mb-4">Edit Itinerary</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="input"
-                    required
-                  />
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold">Edit Itinerary</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
+                    <input
+                      type="number"
+                      name="days"
+                      value={formData.days}
+                      onChange={handleDaysChange}
+                      className="input"
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
-                  <input
-                    type="number"
-                    name="days"
-                    value={formData.days}
-                    onChange={handleDaysChange}
-                    className="input"
-                    min="1"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="mt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-medium text-gray-900">Departures</h3>
-                  {editingId && (
-                    <button
-                      type="button"
-                      onClick={handleAddDeparture}
-                      className="btn btn-secondary text-sm"
-                    >
-                      Add Departure
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  {formData.departures.map((departure, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white rounded-lg shadow-sm relative">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          name="start_date"
-                          value={departure.start_date}
-                          onChange={(e) => handleDateChange(index, e)}
-                          className="input"
-                          required={index !== formData.departures.length - 1}
-                        />
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-lg font-medium text-gray-900">Departures</h3>
+                    {editingId && (
+                      <button
+                        type="button"
+                        onClick={handleAddDeparture}
+                        className="btn btn-secondary text-sm"
+                      >
+                        Add Departure
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    {formData.departures.map((departure, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg relative">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            name="start_date"
+                            value={departure.start_date}
+                            onChange={(e) => handleDateChange(index, e)}
+                            className="input"
+                            required={index !== formData.departures.length - 1}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                          <input
+                            type="date"
+                            name="end_date"
+                            value={departure.end_date}
+                            onChange={(e) => handleDateChange(index, e)}
+                            className="input"
+                            required={index !== formData.departures.length - 1}
+                          />
+                        </div>
+                        {index !== formData.departures.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDeparture(index)}
+                            className="absolute top-2 right-2 text-red-600 hover:text-red-900"
+                          >
+                            <FaTimes className="text-lg" />
+                          </button>
+                        )}
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input
-                          type="date"
-                          name="end_date"
-                          value={departure.end_date}
-                          onChange={(e) => handleDateChange(index, e)}
-                          className="input"
-                          required={index !== formData.departures.length - 1}
-                        />
-                      </div>
-                      {index !== formData.departures.length - 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDeparture(index)}
-                          className="absolute top-2 right-2 text-red-600 hover:text-red-900"
-                        >
-                          <FaTimes className="text-lg" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-6">
-                <ItineraryPricesForm
-                  cruiseId={cruiseId}
-                  itineraryId={editingId || 0}
-                  cabins={cabins.map((cabin) => ({
-                    id: cabin.id,
-                    name: cabin.name
-                  }))}
-                  prices={prices.filter((p: Price) => p.cruise_itinerary_id === editingId)}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingId(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
+                <div className="mt-6">
+                  <div className="border-t border-gray-200 pt-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Prices</h3>
+                    <ItineraryPricesForm
+                      itineraryId={editingId || 0}
+                      cabins={cabins.map((cabin) => ({
+                        id: cabin.id,
+                        name: cabin.name
+                      }))}
+                      prices={prices.filter(p => p.cruise_itinerary_id === editingId)}
+                      onPricesChange={(newPrices) => {
+                        console.log('Nuevos precios recibidos:', newPrices)
+                        setEditingPrices(newPrices)
+                      }}
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setEditingId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -805,10 +840,12 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
               </button>
             </div>
             <ItineraryPricesForm
-              cruiseId={cruiseId}
               itineraryId={selectedItinerary.id}
               cabins={cabins}
               prices={prices.filter(p => p.cruise_itinerary_id === selectedItinerary.id)}
+              onPricesChange={(newPrices) => {
+                setEditingPrices(newPrices)
+              }}
             />
           </div>
         </div>

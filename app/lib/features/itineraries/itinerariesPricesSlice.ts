@@ -10,10 +10,28 @@ interface Price {
   updated_at: string
 }
 
+interface Itinerary {
+  id: number
+  cruise_id: number
+  name: string
+  days: number
+  created_at: string
+  updated_at: string
+}
+
 interface PricesState {
   items: Price[]
   status: 'idle' | 'loading' | 'succeeded' | 'failed'
   error: string | null
+}
+
+interface RootState {
+  itinerariesPrices: PricesState
+  itineraries: {
+    items: Itinerary[]
+    status: string
+    error: string | null
+  }
 }
 
 const initialState: PricesState = {
@@ -50,14 +68,61 @@ export const createPrice = createAsyncThunk(
 
 export const updatePrice = createAsyncThunk(
   'itinerariesPrices/updatePrice',
-  async ({ cruiseId, itineraryId, priceId, priceData }: { cruiseId: number; itineraryId: number; priceId: number; priceData: { price: number } }) => {
-    const response = await axios.put(`/api/v1/cruise/${cruiseId}/itinerary/${itineraryId}/price/${priceId}`, priceData, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+  async ({ priceId, priceData }: { priceId: number; priceData: { price: number } }, { getState }) => {
+    const numericPrice = Number(priceData.price)
+    
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+      throw new Error('The price must be a positive number')
+    }
+
+    const state = getState() as RootState
+    const originalPrice = state.itinerariesPrices.items.find(
+      (price: Price) => price.id === priceId
+    )
+
+    if (!originalPrice) {
+      throw new Error('An original price was not found')
+    }
+
+    // Obtener el cruiseId del itinerario
+    const itinerary = state.itineraries.items.find(
+      (it: Itinerary) => it.id === originalPrice.cruise_itinerary_id
+    )
+
+    if (!itinerary) {
+      throw new Error('The itinerary was not found')
+    }
+
+    try {
+      console.log('Actualizando precio:', {
+        url: `/api/v1/cruise/${itinerary.cruise_id}/itinerary/${originalPrice.cruise_itinerary_id}/price/${priceId}`,
+        price: numericPrice,
+        cruise_cabin_id: originalPrice.cruise_cabin_id
+      })
+
+      const response = await axios.put(
+        `/api/v1/cruise/${itinerary.cruise_id}/itinerary/${originalPrice.cruise_itinerary_id}/price/${priceId}`,
+        { 
+          price: numericPrice,
+          cruise_cabin_id: originalPrice.cruise_cabin_id
+        },
+        {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+          }
+        }
+      )
+
+      return response.data.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error de respuesta:', error.response?.data)
+        throw new Error(error.response?.data?.message || 'Error al actualizar el precio')
       }
-    })
-    return response.data.data
+      throw error
+    }
   }
 )
 

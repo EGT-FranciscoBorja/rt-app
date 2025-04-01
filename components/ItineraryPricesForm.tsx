@@ -1,80 +1,107 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAppDispatch } from '@/app/hooks'
-import { createPrice, updatePrice, deletePrice } from '@/app/lib/features/itineraries/itinerariesPricesSlice'
+import { updatePrice } from '@/app/lib/features/itineraries/itinerariesPricesSlice'
 
-interface PriceFormData {
+interface Price {
+  id: number
   cruise_cabin_id: number
+  cruise_itinerary_id: number
   price: number
+  created_at: string
+  updated_at: string
 }
 
 interface ItineraryPricesFormProps {
-  cruiseId: number
   itineraryId: number
   cabins: Array<{ id: number; name: string }>
-  prices: Array<{
-    id: number
-    cruise_cabin_id: number
-    price: number
-  }>
+  prices: Price[]
+  onPricesChange: (prices: Price[]) => void
 }
 
-export default function ItineraryPricesForm({ cruiseId, itineraryId, cabins, prices }: ItineraryPricesFormProps) {
+export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPricesChange }: ItineraryPricesFormProps) {
   const dispatch = useAppDispatch()
-  const [formData, setFormData] = useState<PriceFormData>({
-    cruise_cabin_id: 0,
-    price: 0
-  })
+  const [editingPrices, setEditingPrices] = useState<Price[]>(prices)
   const [editingId, setEditingId] = useState<number | null>(null)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'price' ? parseFloat(value) : parseInt(value)
-    }))
+  // Actualizar editingPrices cuando cambian los precios prop
+  useEffect(() => {
+    console.log('Precios recibidos:', prices)
+    console.log('ID del itinerario:', itineraryId)
+    setEditingPrices(prices)
+  }, [prices, itineraryId])
+
+  const handlePriceChange = (priceId: number, newPrice: string) => {
+    // Permitir cualquier valor durante la edición
+    setEditingPrices(prevPrices => 
+      prevPrices.map(price => 
+        price.id === priceId ? { ...price, price: newPrice === '' ? 0 : parseFloat(newPrice) } : price
+      )
+    )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      if (editingId) {
-        await dispatch(updatePrice({
-          cruiseId,
-          itineraryId,
-          priceId: editingId,
-          priceData: { price: formData.price }
-        })).unwrap()
-      } else {
-        await dispatch(createPrice({
-          cruiseId,
-          itineraryId,
-          priceData: formData
-        })).unwrap()
-      }
-      setFormData({ cruise_cabin_id: 0, price: 0 })
-      setEditingId(null)
-    } catch (error) {
-      console.error('Error submitting price:', error)
+  const handleEdit = (priceId: number) => {
+    console.log('Editando precio:', priceId)
+    setEditingId(priceId)
+  }
+
+  const handleSave = async () => {
+    if (!editingId) return
+
+    const priceToUpdate = editingPrices.find(p => p.id === editingId)
+    if (!priceToUpdate) {
+      console.error('No se encontró el precio a actualizar:', editingId)
+      return
     }
-  }
 
-  const handleEdit = (price: { id: number; cruise_cabin_id: number; price: number }) => {
-    setFormData({
-      cruise_cabin_id: price.cruise_cabin_id,
-      price: price.price
-    })
-    setEditingId(price.id)
-  }
+    // Validar que el precio sea un número válido y positivo
+    if (isNaN(priceToUpdate.price) || priceToUpdate.price <= 0) {
+      alert('El precio debe ser un número positivo')
+      return
+    }
 
-  const handleDelete = async (priceId: number) => {
     try {
-      await dispatch(deletePrice({
-        cruiseId,
-        itineraryId,
-        priceId
+      // Asegurarse de que el precio sea un número
+      const numericPrice = Number(priceToUpdate.price)
+      
+      console.log('Datos del precio a actualizar:', {
+        priceId: priceToUpdate.id,
+        price: numericPrice,
+        originalPrice: priceToUpdate
+      })
+      
+      const result = await dispatch(updatePrice({
+        priceId: priceToUpdate.id,
+        priceData: { price: numericPrice }
       })).unwrap()
-    } catch (error) {
-      console.error('Error deleting price:', error)
+      
+      console.log('Precio actualizado exitosamente:', result)
+      
+      // Actualizar el estado local con el precio actualizado
+      setEditingPrices(prevPrices => 
+        prevPrices.map(price => 
+          price.id === editingId ? result : price
+        )
+      )
+      
+      setEditingId(null)
+      onPricesChange(editingPrices)
+    } catch (error: unknown) {
+      console.error('Error updating price:', error)
+      console.error('Datos que causaron el error:', {
+        priceId: priceToUpdate.id,
+        itineraryId,
+        price: priceToUpdate.price
+      })
+      
+      // Mostrar mensaje de error al usuario
+      if (error instanceof Error) {
+        alert(error.message)
+      } else {
+        alert('Error al actualizar el precio')
+      }
+      
+      // Revertir el cambio en caso de error
+      setEditingPrices(prices)
     }
   }
 
@@ -82,103 +109,64 @@ export default function ItineraryPricesForm({ cruiseId, itineraryId, cabins, pri
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Prices</h3>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="cruise_cabin_id" className="block text-sm font-medium text-gray-700">
-              Cabin
-            </label>
-            <select
-              id="cruise_cabin_id"
-              name="cruise_cabin_id"
-              value={formData.cruise_cabin_id}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            >
-              <option value="">Select a cabin</option>
-              {cabins.map(cabin => (
-                <option key={cabin.id} value={cabin.id}>
-                  {cabin.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-              Price
-            </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            {editingId ? 'Update Price' : 'Add Price'}
-          </button>
-        </div>
-      </form>
-
-      <div className="mt-6">
-        <h4 className="text-md font-medium mb-2">Current Prices</h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cabin
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {prices.map(price => {
-                const cabin = cabins.find(c => c.id === price.cruise_cabin_id)
-                return (
-                  <tr key={price.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {cabin?.name || 'Unknown Cabin'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${price.price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Cabin
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {editingPrices.map(price => {
+              const cabin = cabins.find(c => c.id === price.cruise_cabin_id)
+              return (
+                <tr key={price.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {cabin?.name || 'Unknown Cabin'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <input
+                      type="number"
+                      value={editingId === price.id ? price.price.toString() : price.price.toFixed(2)}
+                      onChange={(e) => handlePriceChange(price.id, e.target.value)}
+                      disabled={editingId !== price.id}
+                      className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${
+                        editingId !== price.id ? 'bg-gray-100' : ''
+                      }`}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {editingId === price.id ? (
                       <button
-                        onClick={() => handleEdit(price)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        type="button"
+                        onClick={handleSave}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(price.id)}
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
                         Edit
                       </button>
-                      <button
-                        onClick={() => handleDelete(price.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
