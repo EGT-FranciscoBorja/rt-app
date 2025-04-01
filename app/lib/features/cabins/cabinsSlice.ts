@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { RootState } from '../../store'
 
 export interface Cabin {
   id: number
@@ -237,12 +238,8 @@ const cabinsSlice = createSlice({
 
 export const { addTempCabin, removeTempCabin, updateTempCabin, clearTempCabins } = cabinsSlice.actions
 
-export const selectCabins = (state: { cabins: CabinState }) => {
-  const items = state.cabins.items
-  return Array.isArray(items) ? items : []
-}
-
-export const selectCabinsStatus = (state: { cabins: CabinState }) => state.cabins.status
-export const selectTempCabins = (state: { cabins: CabinState }) => state.cabins.tempCabins
+export const selectCabins = (state: RootState) => state.cabins.items
+export const selectCabinsStatus = (state: RootState) => state.cabins.status
+export const selectTempCabins = (state: RootState) => state.cabins.tempCabins
 
 export default cabinsSlice.reducer

@@ -7,7 +7,7 @@ import { RiDeleteBin6Line } from "react-icons/ri"
 import { FaDownload } from "react-icons/fa6"
 import { FaCloudUploadAlt, FaArrowLeft, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchCruises, selectCruisesStatus, selectCruises, selectPagination } from '../lib/features/crusies/cruisesSlice'
+import { fetchCruises, selectCruisesStatus, selectCruises, selectPagination } from '../lib/features/cruises/cruisesSlice'
 import EditCruiseModal from './EditCruiseModal'
 import { handleEdit, handleDelete, Cruise } from './actions'
 import Link from 'next/link'
