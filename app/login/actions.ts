@@ -35,7 +35,7 @@ export async function login(formData: FormData) {
     }
 
     // Guardar el token en una cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     cookieStore.set('authToken', data.data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
