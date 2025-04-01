@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
 import { User } from './actions'
-import { useAppDispatch, useAppSelector } from '../hooks'
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -19,7 +18,6 @@ interface FormData {
 }
 
 export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalProps) {
-  const dispatch = useAppDispatch()
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
