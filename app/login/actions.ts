@@ -6,12 +6,43 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export async function login(formData: FormData) {
   try {
+    // Primero obtener el token CSRF
+    const csrfResponse = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      credentials: 'include'
+    })
+
+    if (!csrfResponse.ok) {
+      throw new Error('Error al obtener el token CSRF')
+    }
+
+    // Obtener las cookies de la respuesta
+    const cookies = csrfResponse.headers.get('set-cookie')
+    if (!cookies) {
+      throw new Error('No se recibieron cookies del servidor')
+    }
+
+    // Extraer el token XSRF-TOKEN de las cookies
+    const xsrfToken = cookies.split(';')
+      .find(cookie => cookie.trim().startsWith('XSRF-TOKEN='))
+      ?.split('=')[1]
+
+    if (!xsrfToken) {
+      throw new Error('No se encontró el token XSRF')
+    }
+
+    // Realizar la solicitud de login con el token CSRF
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
       },
+      credentials: 'include',
       body: JSON.stringify({
         email: formData.get('email'),
         password: formData.get('password'),
