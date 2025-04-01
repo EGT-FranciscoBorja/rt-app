@@ -40,7 +40,7 @@ export async function login(formData: FormData) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
+        'X-CSRF-TOKEN': decodeURIComponent(xsrfToken)
       },
       credentials: 'include',
       body: JSON.stringify({
