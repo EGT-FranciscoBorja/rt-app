@@ -6,6 +6,17 @@ import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/feature
 import { FaArrowLeft } from "react-icons/fa"
 import { useRouter } from 'next/navigation'
 
+interface Cabin {
+  id: number
+  name: string
+  description: string
+  cruise_id: number
+  price: number
+  capacity: number
+  created_at: string
+  updated_at: string
+}
+
 interface CabinsListProps {
   cruiseId: number
 }
@@ -13,7 +24,7 @@ interface CabinsListProps {
 function CabinsList({ cruiseId }: CabinsListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const cabins = useAppSelector(selectCabins)
+  const cabins = useAppSelector(selectCabins) as Cabin[]
   const status = useAppSelector(selectCabinsStatus)
 
   useEffect(() => {
@@ -69,8 +80,8 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                 cabins.map((cabin) => {
                   if (!cabin || typeof cabin !== 'object') return null
                   
-                  const basePrice = typeof cabin.base_price === 'number' ? cabin.base_price : 0
-                  const quantity = typeof cabin.quantity === 'number' ? cabin.quantity : 0
+                  const basePrice = typeof cabin.price === 'number' ? cabin.price : 0
+                  const quantity = typeof cabin.capacity === 'number' ? cabin.capacity : 0
                   
                   return (
                     <tr key={cabin.id} className="hover:bg-gray-50">
