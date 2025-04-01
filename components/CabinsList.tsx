@@ -66,25 +66,32 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                   </td>
                 </tr>
               ) : (
-                cabins.map((cabin) => (
-                  <tr key={cabin.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{cabin.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {cabin.quantity}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${cabin.base_price.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(cabin.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(cabin.updated_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
+                cabins.map((cabin) => {
+                  if (!cabin || typeof cabin !== 'object') return null
+                  
+                  const basePrice = typeof cabin.base_price === 'number' ? cabin.base_price : 0
+                  const quantity = typeof cabin.quantity === 'number' ? cabin.quantity : 0
+                  
+                  return (
+                    <tr key={cabin.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{cabin.name || 'Sin nombre'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {quantity}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${basePrice.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {cabin.created_at ? new Date(cabin.created_at).toLocaleDateString() : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {cabin.updated_at ? new Date(cabin.updated_at).toLocaleDateString() : '-'}
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
