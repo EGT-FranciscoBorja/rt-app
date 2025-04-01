@@ -283,7 +283,7 @@ export default function EditCruiseModal({ isOpen, onClose, cruise, onSave }: Edi
             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select
               value={formData.category || ''}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onBlur={(e) => setFormData({ ...formData, category: e.target.value })}
               className="input"
               required
               disabled={isSubmitting}

@@ -2,383 +2,276 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FaRegEdit } from "react-icons/fa"
-import { RiDeleteBin6Line } from "react-icons/ri"
-import { FaDownload } from "react-icons/fa6"
-import { FaCloudUploadAlt, FaArrowLeft, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa"
+import { FaCloudUploadAlt, FaFileUpload, FaTimes } from 'react-icons/fa'
 import { useAppDispatch, useAppSelector } from '../hooks'
-import { fetchUsers, selectUsersStatus, selectUsers, selectPagination } from '../lib/features/users/usersSlice'
-import EditUserModal from '../listUsers/EditUserModal'
-import { handleEdit, handleDelete, User } from '../listUsers/actions'
-import Link from 'next/link'
+import { fetchUsers, selectUsersStatus } from '../lib/features/users/usersSlice'
+import UploadModal from '@/components/UploadModal'
+import { handleCreateUser, handleFileUpload } from './actions'
 
-interface UserFilters {
-  name: string
-  email: string
-  role: string
-}
-
-export default function Users() {
+export default function UsersPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const status = useAppSelector(selectUsersStatus)
-  const users = useAppSelector(selectUsers)
-  const pagination = useAppSelector(selectPagination)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true)
-  const [filters, setFilters] = useState<UserFilters>({
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    password: string;
+    roles: string[];
+  }>({
     name: '',
     email: '',
-    role: '',
+    password: '',
+    roles: [],
   })
-  const [activeFilters, setActiveFilters] = useState<UserFilters>({
-    name: '',
-    email: '',
-    role: '',
-  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    dispatch(fetchUsers({
-      page: currentPage,
-      filters: activeFilters
-    }))
-  }, [dispatch, currentPage, activeFilters])
-
-  const handleEditClick = (user: User) => {
-    setEditingUser(user)
-  }
-
-  const handleDeleteClick = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await handleDelete(id)
-        dispatch(fetchUsers({
-          page: currentPage,
-          filters: activeFilters
-        }))
-      } catch (error) {
-        console.error('Error deleting user:', error)
-      }
-    }
-  }
-
-  const handleSaveEdit = async (updatedUser: User) => {
-    try {
-      await handleEdit(updatedUser)
+    if (status === 'idle') {
       dispatch(fetchUsers({
-        page: currentPage,
-        filters: activeFilters
+        page: 1,
+        filters: {
+          name: '',
+          email: '',
+          role: '',
+        }
       }))
-      setEditingUser(null)
-    } catch (error) {
-      console.error('Error updating user:', error)
     }
-  }
+  }, [status, dispatch])
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }))
+
+    if (name === 'roles') {
+      const select = e.target as HTMLSelectElement
+      const selectedRoles = Array.from(select.selectedOptions).map(option => option.value)
+      setFormData(prev => ({
+        ...prev,
+        roles: selectedRoles
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
-  const handleApplyFilters = () => {
-    setActiveFilters(filters)
-    setCurrentPage(1)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      // Validaciones
+      if (!formData.name.trim()) {
+        throw new Error('El nombre es requerido')
+      }
+
+      if (!formData.email.trim()) {
+        throw new Error('El email es requerido')
+      }
+
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Por favor ingrese un email válido')
+      }
+
+      if (formData.password.length < 8) {
+        throw new Error('La contraseña debe tener al menos 8 caracteres')
+      }
+
+      if (formData.roles.length === 0) {
+        throw new Error('Debe seleccionar al menos un rol')
+      }
+
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        roles: formData.roles,
+        password: formData.password,
+      }
+
+      console.log('Sending data:', userData) // For debugging
+
+      await handleCreateUser(userData)
+
+      dispatch(fetchUsers({
+        page: 1,
+        filters: {
+          name: '',
+          email: '',
+          role: '',
+        }
+      }))
+      router.push('/listUsers')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error creating user. Please try again.')
+      console.error('Error creating user:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleClearFilters = () => {
-    setFilters({
-      name: '',
-      email: '',
-      role: '',
-    })
-    setActiveFilters({
-      name: '',
-      email: '',
-      role: '',
-    })
-    setCurrentPage(1)
-  }
-
-  const handleRemoveFilter = (filterName: keyof UserFilters) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: ''
-    }))
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterName]: ''
-    }))
-    setCurrentPage(1)
-  }
-
-  const renderPagination = () => {
-    const pages = []
-    const maxVisiblePages = 5
-    const halfMaxPages = Math.floor(maxVisiblePages / 2)
-
-    let startPage = Math.max(1, pagination.current_page - halfMaxPages)
-    const endPage = Math.min(pagination.last_page, startPage + maxVisiblePages - 1)
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+  const handleFileUploadSubmit = async (file: File) => {
+    try {
+      await handleFileUpload(file)
+      dispatch(fetchUsers({
+        page: 1,
+        filters: {
+          name: '',
+          email: '',
+          role: '',
+        }
+      }))
+      setIsUploadModalOpen(false)
+    } catch (err) {
+      console.error('Error uploading file:', err)
     }
-
-    if (pagination.current_page > 1) {
-      pages.push(
-        <button
-          key="prev"
-          onClick={() => setCurrentPage(pagination.current_page - 1)}
-          className="px-3 py-1 text-gray-600 hover:text-gray-900"
-        >
-          Previous
-        </button>
-      )
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => setCurrentPage(i)}
-          className={`px-3 py-1 rounded ${
-            i === pagination.current_page
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          {i}
-        </button>
-      )
-    }
-
-    if (pagination.current_page < pagination.last_page) {
-      pages.push(
-        <button
-          key="next"
-          onClick={() => setCurrentPage(pagination.current_page + 1)}
-          className="px-3 py-1 text-gray-600 hover:text-gray-900"
-        >
-          Next
-        </button>
-      )
-    }
-
-    return pages
   }
 
   return (
-    <div className="flex gap-6 p-6 max-w-[2000px] mx-auto">
-      {/* Filters Section */}
-      <div className={`${isFiltersOpen ? 'w-64' : 'w-12'} bg-white p-4 rounded-lg shadow-md transition-all duration-300 relative`}>
-        <button
-          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-          className="absolute -right-3 top-4 bg-white rounded-full p-1 shadow-md hover:bg-gray-50"
-        >
-          {isFiltersOpen ? <FaChevronLeft /> : <FaChevronRight />}
-        </button>
-
-        {isFiltersOpen && (
-          <>
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
-            
-            {/* Active Filters Display */}
-            {Object.entries(activeFilters).some(([, value]) => value) && (
-              <div className="mb-4 p-2 bg-gray-50 rounded">
-                <p className="text-sm text-gray-600 mb-2">Active Filters:</p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(activeFilters).map(([key, value]) => 
-                    value && (
-                      <span key={key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {key === 'name' ? 'Name' : 
-                         key === 'email' ? 'Email' : 
-                         'Role'}: {value}
-                        <button
-                          onClick={() => handleRemoveFilter(key as keyof UserFilters)}
-                          className="ml-1 text-blue-600 hover:text-blue-800"
-                        >
-                          <FaTimes className="text-xs" />
-                        </button>
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={filters.name}
-                  onChange={handleFilterChange}
-                  className="input"
-                  placeholder="Search by name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="text"
-                  name="email"
-                  value={filters.email}
-                  onChange={handleFilterChange}
-                  className="input"
-                  placeholder="Search by email"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select
-                  name="role"
-                  value={filters.role}
-                  onChange={handleFilterChange}
-                  className="input"
-                >
-                  <option value="">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="sales">Sales</option>
-                  <option value="super-admin">Super admin</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleApplyFilters}
-                  className="btn btn-primary flex-1"
-                >
-                  Apply Filters
-                </button>
-                <button
-                  onClick={handleClearFilters}
-                  className="btn btn-secondary"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+    <div className="container py-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-0">Create New User</h1>
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="btn btn-primary flex-1 md:flex-none flex items-center justify-center gap-2"
+          >
+            <FaFileUpload className="text-lg" />
+            Upload File
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="text-gray-600 hover:text-gray-800"
+          >
+            <FaTimes className="text-2xl" />
+          </button>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <FaArrowLeft className="text-2xl" />
-            </button>
-            <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-          </div>
-          <div className="flex gap-3">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <FaDownload className="text-lg" />
-              Download Data
-            </button>
-            <button 
-              onClick={() => router.push('/Users')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <FaCloudUploadAlt className="text-lg" />
-              Add New User
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {status === 'loading' ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      Loading Users...
-                    </td>
-                  </tr>
-                ) : status === 'failed' ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-red-500">
-                      Error loading Users
-                    </td>
-                  </tr>
-                ) : !Array.isArray(users) || users.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      No Users available
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          <Link href={`/Users/${user.id}/cabins`} className="text-blue-600 hover:text-blue-800">
-                            {user.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 line-clamp-2">{user.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{user.roles}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditClick(user)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaRegEdit className="text-lg" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(user.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <RiDeleteBin6Line className="text-lg" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination */}
-        {status === 'succeeded' && pagination.last_page > 1 && (
-          <div className="mt-4 flex justify-center items-center gap-2">
-            {renderPagination()}
-          </div>
-        )}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+        <p className="text-sm text-blue-800">
+          You can upload an Excel (.xlsx) or CSV (.csv) file with the required format according to the users table.
+          <a
+            href="/assets/demo-users.xlsx"
+            download
+            className="ml-2 text-blue-600 hover:text-blue-800 underline"
+          >
+            Download example
+          </a>
+        </p>
       </div>
 
-      {editingUser && (
-        <EditUserModal
-          isOpen={!!editingUser}
-          onClose={() => setEditingUser(null)}
-          user={editingUser}
-          onSave={handleSaveEdit}
-        />
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+          {error}
+        </div>
       )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* User Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            User Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter user name"
+            required
+            minLength={1}
+          />
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            User Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter user email"
+            required
+            pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+          />
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Password <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            className="input"
+            placeholder="Enter user password"
+            required
+            minLength={8}
+          />
+          <p className="text-sm text-gray-500 mt-1">La contraseña debe tener al menos 8 caracteres</p>
+        </div>
+
+        {/* Roles */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Roles <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="roles"
+            value={formData.roles}
+            onChange={handleInputChange}
+            className="input"
+            required
+            multiple
+          >
+            <option value="admin">Admin</option>
+            <option value="sales">Sales</option>
+            <option value="super-admin">SuperAdmin</option>
+          </select>
+          <p className="text-sm text-gray-500 mt-1">Mantén presionada la tecla Ctrl para seleccionar múltiples roles</p>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="btn btn-secondary w-full sm:w-auto"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn btn-primary w-full sm:w-auto flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <FaCloudUploadAlt />
+            {isSubmitting ? 'Creating...' : 'Create User'}
+          </button>
+        </div>
+      </form>
+
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={handleFileUploadSubmit}
+      />
     </div>
   )
 }
