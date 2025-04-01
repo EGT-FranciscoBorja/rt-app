@@ -3,6 +3,8 @@
 import { FaRegEdit } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL
+
 export interface User {
   id: number
   name: string
@@ -21,7 +23,7 @@ export const handleEdit = async (user: User) => {
 
     console.log('Enviando datos de edición:', userData) // Para debugging
 
-    const response = await fetch(`/api/v1/user/${user.id}`, {
+    const response = await fetch(`${API_URL}/api/v1/user/${user.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +46,7 @@ export const handleEdit = async (user: User) => {
 
 export const handleDelete = async (id: number) => {
   try {
-    const response = await fetch(`/api/v1/user/${id}`, {
+    const response = await fetch(`${API_URL}/api/v1/user/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
