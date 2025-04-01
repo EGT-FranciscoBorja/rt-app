@@ -36,19 +36,22 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
     return charters.filter(charter => {
       if (!charter || typeof charter !== 'object') return false
       
+      const price = typeof charter.price === 'number' ? charter.price : 0
+      const persons = typeof charter.persons === 'number' ? charter.persons : 0
+      
       if (filters.searchTerm && !charter.name?.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false
       }
-      if (filters.minPrice && (typeof charter.price !== 'number' || charter.price < filters.minPrice)) {
+      if (filters.minPrice && price < filters.minPrice) {
         return false
       }
-      if (filters.maxPrice && (typeof charter.price !== 'number' || charter.price > filters.maxPrice)) {
+      if (filters.maxPrice && price > filters.maxPrice) {
         return false
       }
-      if (filters.minPersons && (typeof charter.persons !== 'number' || charter.persons < filters.minPersons)) {
+      if (filters.minPersons && persons < filters.minPersons) {
         return false
       }
-      if (filters.maxPersons && (typeof charter.persons !== 'number' || charter.persons > filters.maxPersons)) {
+      if (filters.maxPersons && persons > filters.maxPersons) {
         return false
       }
       return true
