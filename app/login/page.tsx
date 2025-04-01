@@ -24,7 +24,7 @@ export default function LoginPage() {
       } else {
         setError(result.message || 'Error en el inicio de sesión')
       }
-    } catch (err) {
+    } catch {
       setError('Error al procesar el inicio de sesión')
     } finally {
       setIsSubmitting(false)
