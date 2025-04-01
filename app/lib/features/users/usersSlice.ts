@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { RootState } from '../../store'
 
 export interface User {
   id: number
@@ -63,48 +64,18 @@ export const fetchUsers = createAsyncThunk(
       ...(filters.role && { role: filters.role })
     })
 
-    try {
-      const response = await fetch(`/api/v1/user?${queryParams.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_TOKEN}`,
-        },
-        credentials: 'include',
-        mode: 'cors',
-      })
+    const response = await fetch(`/api/v1/users?${queryParams}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`,
+      },
+    })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData,
-          url: `/api/v1/user?${queryParams.toString()}`,
-          headers: Object.fromEntries(response.headers.entries()),
-          token: API_TOKEN.substring(0, 10) + '...'
-        })
-        
-        throw new Error(`Failed to fetch users: ${response.status}`)
-      }
-
-      const result = await response.json()
-      if (!result.success) {
-        throw new Error(result.message || 'Error fetching users')
-      }
-      console.log(result.data)
-      return {
-        data: result.data?.data || [],
-        current_page: result.data?.current_page || 1,
-        last_page: result.data?.last_page || 1,
-        total: result.data?.total || 0,
-        per_page: result.data?.per_page || 10
-      }
-    } catch (error) {
-      console.error('Error in fetchUsers:', error)
-      throw error
+    if (!response.ok) {
+      throw new Error('Failed to fetch users')
     }
+
+    return response.json()
   }
 )
 
@@ -136,12 +107,8 @@ const usersSlice = createSlice({
   },
 })
 
-export const selectUsers = (state: { users: UserState }) => {
-  const items = state.users.items
-  return Array.isArray(items) ? items : []
-}
-
-export const selectUsersStatus = (state: { users: UserState }) => state.users.status
-export const selectPagination = (state: { users: UserState }) => state.users.pagination
+export const selectUsers = (state: RootState) => state.users.items
+export const selectUsersStatus = (state: RootState) => state.users.status
+export const selectPagination = (state: RootState) => state.users.pagination
 
 export default usersSlice.reducer

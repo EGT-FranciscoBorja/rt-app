@@ -33,12 +33,32 @@ interface CruiseState {
   }
 }
 
+interface UserState {
+  items: Array<{
+    id: number
+    name: string
+    email: string
+    password: string
+    roles: string
+    created_at: string
+    updated_at: string
+  }>
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  pagination: {
+    current_page: number
+    last_page: number
+    total: number
+    per_page: number
+  }
+}
+
 interface CabinState {
   items: Array<{
     id: number
     name: string
     description: string
-    cruise_id: number
+    capacity: number
+    price: number
     created_at: string
     updated_at: string
   }>
@@ -55,9 +75,9 @@ interface CabinState {
 interface ItineraryState {
   items: Array<{
     id: number
+    cruise_id: number
     name: string
     days: number
-    cruise_id: number
     created_at: string
     updated_at: string
   }>
@@ -68,9 +88,9 @@ interface ItineraryState {
 interface DepartureState {
   items: Array<{
     id: number
+    cruise_itinerary_id: number
     start_date: string
     end_date: string
-    cruise_itinerary_id: number
     created_at: string
     updated_at: string
   }>
@@ -78,19 +98,7 @@ interface DepartureState {
   error: string | null
 }
 
-interface UserState {
-  items: Array<{
-    id: number
-    name: string
-    email: string
-    created_at: string
-    updated_at: string
-  }>
-  status: 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: string | null
-}
-
-interface PriceState {
+interface ItineraryPriceState {
   items: Array<{
     id: number
     cruise_cabin_id: number
@@ -103,45 +111,40 @@ interface PriceState {
   error: string | null
 }
 
+interface CharterState {
+  items: Array<{
+    id: number
+    name: string
+    description: string
+    persons: number
+    price: number
+    created_at: string
+    updated_at: string
+  }>
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  error: string | null
+}
+
 export interface RootState {
   cruises: CruiseState
+  users: UserState
   cabins: CabinState
   itineraries: ItineraryState
   departures: DepartureState
-  users: UserState
-  itinerariesPrices: PriceState
-  charters: {
-    items: Array<{
-      id: number
-      name: string
-      description: string
-      persons: number
-      price: number
-      created_at: string
-      updated_at: string
-    }>
-    status: 'idle' | 'loading' | 'succeeded' | 'failed'
-    error: string | null
-  }
+  itinerariesPrices: ItineraryPriceState
+  charters: CharterState
 }
 
 export const store = configureStore({
   reducer: {
     cruises: cruisesReducer,
+    users: usersReducer,
     cabins: cabinsReducer,
     itineraries: itinerariesReducer,
     departures: departuresReducer,
-    users: usersReducer,
     itinerariesPrices: itinerariesPricesReducer,
-    charters: chartersReducer
+    charters: chartersReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
 })
 
-// Infer the type of store
-export type AppStore = typeof store
-// Infer the `AppDispatch` type from the store itself
 export type AppDispatch = typeof store.dispatch
