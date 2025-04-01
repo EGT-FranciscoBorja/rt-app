@@ -108,34 +108,40 @@ export default function ChartersList({ cruiseId, itineraryId }: ChartersListProp
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCharters.map(charter => (
-            <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-2">{charter.name}</h3>
-              <p className="text-gray-600 mb-2">{charter.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-primary font-semibold">
-                  ${charter.price ? charter.price.toLocaleString() : '0'}
-                </span>
-                <span className="text-gray-600">
-                  {charter.persons} persons
-                </span>
+          {filteredCharters && filteredCharters.length > 0 ? (
+            filteredCharters.map(charter => (
+              <div key={charter.id} className="bg-white p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">{charter.name || 'Sin nombre'}</h3>
+                <p className="text-gray-600 mb-2">{charter.description || 'Sin descripción'}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-primary font-semibold">
+                    ${typeof charter.price === 'number' ? charter.price.toLocaleString() : '0'}
+                  </span>
+                  <span className="text-gray-600">
+                    {typeof charter.persons === 'number' ? `${charter.persons} persons` : '0 persons'}
+                  </span>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => handleEditClick(charter)}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCharter(charter.id)}
+                    className="btn btn-danger btn-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => handleEditClick(charter)}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteCharter(charter.id)}
-                  className="btn btn-danger btn-sm"
-                >
-                  Delete
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center text-gray-500">
+              No hay charters disponibles
             </div>
-          ))}
+          )}
         </div>
       </div>
 
