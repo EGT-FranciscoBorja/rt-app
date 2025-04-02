@@ -12,6 +12,21 @@ export interface User {
   updated_at: string
 }
 
+export interface ApiErrorResponse {
+  success: boolean
+  message: string
+  errors: {
+    [key: string]: string[]
+  }
+  data: null
+}
+
+export interface ApiError {
+  response: {
+    data: ApiErrorResponse
+  }
+}
+
 export const handleEdit = async (user: User) => {
   try {
     // Asegurarnos de que la categoría sea un número
@@ -31,11 +46,13 @@ export const handleEdit = async (user: User) => {
       body: JSON.stringify(userData),
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error('Failed to update user')
+      throw { response: { data } } as ApiError
     }
 
-    return await response.json()
+    return data
   } catch (error) {
     console.error('Error updating user:', error)
     throw error

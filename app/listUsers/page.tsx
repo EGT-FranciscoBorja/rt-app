@@ -72,6 +72,7 @@ export default function ListUsersPage() {
       setEditingUser(null)
     } catch (error) {
       console.error('Error updating User:', error)
+      throw error
     }
   }
 
