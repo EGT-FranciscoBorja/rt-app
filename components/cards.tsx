@@ -34,6 +34,14 @@ const Cards = () => {
       description: 'Availibility and prices for activities in Ecuador',
       icon: <PiSunHorizonBold />,
     },
+    {
+      id: 5,
+      path: '/cruises/availability',
+      title: 'Cruises Availability',
+      description: 'Availability and prices for cruises',
+      icon: <GiShipWheel />,
+  
+    },
     ...(isSuperAdmin ? [{
       id: 4,
       path: '/listUsers',
