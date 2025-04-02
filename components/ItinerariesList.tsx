@@ -10,6 +10,7 @@ import { FaRegEdit, FaPlus, FaTimes } from 'react-icons/fa'
 import { RiDeleteBin6Line } from 'react-icons/ri'
 import Link from 'next/link'
 import ItineraryPricesForm from './ItineraryPricesForm'
+import { usePermissions } from '@/app/hooks/usePermissions'
 
 interface ItinerariesListProps {
   cruiseId: number
@@ -49,6 +50,7 @@ interface Price {
 
 function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   const dispatch = useAppDispatch()
+  const { canEdit } = usePermissions()
   const itineraries = useAppSelector(selectItineraries)
   const departures = useAppSelector(selectDepartures)
   const prices = useAppSelector(selectPrices)
@@ -537,20 +539,115 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
   }
 
   return (
-    <div className="mt-8">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">Cruise Itineraries</h2>
-        <button
-          onClick={() => {
-            setIsAdding(true)
-            setEditingId(null)
-            setFormData({ name: '', days: '', departures: [{ start_date: '', end_date: '' }], prices: [] })
-          }}
-          className="btn btn-primary flex items-center gap-2"
-        >
-          <FaPlus />
-          Add Itinerary
-        </button>
+    <div className="container py-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Cruise Itineraries</h1>
+        {canEdit && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <FaPlus />
+            Add Itinerary
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departures</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                {canEdit && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {status === 'loading' ? (
+                <tr>
+                  <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
+                    Loading itineraries...
+                  </td>
+                </tr>
+              ) : status === 'failed' ? (
+                <tr>
+                  <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-red-500">
+                    Error loading itineraries
+                  </td>
+                </tr>
+              ) : !Array.isArray(itineraries) || itineraries.length === 0 ? (
+                <tr>
+                  <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
+                    No itineraries available
+                  </td>
+                </tr>
+              ) : (
+                itineraries.map((itinerary) => (
+                  <tr key={itinerary.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{itinerary.name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {itinerary.days} days
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {departures
+                        .filter(d => d.cruise_itinerary_id === itinerary.id)
+                        .map(d => (
+                          <div key={d.id}>
+                            {formatDisplayDate(d.start_date)} - {formatDisplayDate(d.end_date)}
+                          </div>
+                        ))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {prices
+                        .filter(p => p.cruise_itinerary_id === itinerary.id)
+                        .map(p => {
+                          const cabin = cabins.find(c => c.id === p.cruise_cabin_id)
+                          return (
+                            <div key={p.id}>
+                              {cabin?.name}: ${p.price.toLocaleString()}
+                            </div>
+                          )
+                        })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(itinerary.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(itinerary.updated_at).toLocaleDateString()}
+                    </td>
+                    {canEdit && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(itinerary)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <FaRegEdit className="text-lg" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(itinerary.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <RiDeleteBin6Line className="text-lg" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {(isAdding || editingId) && (
@@ -677,160 +774,6 @@ function ItinerariesList({ cruiseId }: ItinerariesListProps) {
           </div>
         </div>
       )}
-
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departures</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prices</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cabins</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {status === 'loading' ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                    Loading itineraries...
-                  </td>
-                </tr>
-              ) : status === 'failed' ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-red-500">
-                    Error loading itineraries
-                  </td>
-                </tr>
-              ) : !Array.isArray(itineraries) || itineraries.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                    No itineraries available
-                  </td>
-                </tr>
-              ) : (
-                itineraries.map((itinerary) => (
-                  <tr key={itinerary.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        <Link 
-                          href={`/charters?cruiseId=${cruiseId}&itineraryId=${itinerary.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 hover:underline"
-                        >
-                          {itinerary.name}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {itinerary.days} days
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {departures && departures.length > 0 && (
-                        <div className="space-y-2">
-                          {departures
-                            .filter(departure => departure.cruise_itinerary_id === itinerary.id)
-                            .map((departure) => (
-                              <div key={departure.id} className="text-sm">
-                                {formatDisplayDate(departure.start_date)}
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {departures && departures.length > 0 && (
-                        <div className="space-y-2">
-                          {departures
-                            .filter(departure => departure.cruise_itinerary_id === itinerary.id)
-                            .map((departure) => (
-                              <div key={departure.id} className="text-sm">
-                                {formatDisplayDate(departure.end_date)}
-                              </div>
-                            ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-2">
-                        {cabinsStatus === 'loading' ? (
-                          <span className="text-gray-400 text-sm">Loading cabins...</span>
-                        ) : cabins && cabins.length > 0 ? (
-                          cabins.map(cabin => (
-                            <div key={cabin.id} className="text-sm">
-                              {cabin.name}
-                            </div>
-                          ))
-                        ) : (
-                          <span className="text-gray-400 text-sm">No cabins available</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-2">
-                        {cabinsStatus === 'loading' ? (
-                          <span className="text-gray-400 text-sm">Loading prices...</span>
-                        ) : cabins && cabins.length > 0 ? (
-                          cabins.map(cabin => {
-                            const price = prices.find(p => 
-                              p.cruise_itinerary_id === itinerary.id && 
-                              p.cruise_cabin_id === cabin.id
-                            )
-                            return (
-                              <div key={cabin.id} className="text-sm text-green-600">
-                                {price && typeof price.price === 'number' ? `$${price.price.toFixed(2)}` : '-'}
-                              </div>
-                            )
-                          })
-                        ) : (
-                          <span className="text-gray-400 text-sm">No cabins available</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(itinerary.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(itinerary.updated_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(itinerary)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <FaRegEdit className="text-lg" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(itinerary.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <RiDeleteBin6Line className="text-lg" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {showPricesForm && selectedItinerary && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

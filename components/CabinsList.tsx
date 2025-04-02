@@ -5,6 +5,9 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/features/cabins/cabinsSlice'
 import { FaArrowLeft } from "react-icons/fa"
 import { useRouter } from 'next/navigation'
+import { usePermissions } from '@/app/hooks/usePermissions'
+import { FaRegEdit } from 'react-icons/fa'
+import { RiDeleteBin6Line } from 'react-icons/ri'
 
 interface Cabin {
   id: number
@@ -24,6 +27,7 @@ interface CabinsListProps {
 function CabinsList({ cruiseId }: CabinsListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { canEdit } = usePermissions()
   const cabins = useAppSelector(selectCabins) as Cabin[]
   const status = useAppSelector(selectCabinsStatus)
 
@@ -55,24 +59,27 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                {canEdit && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {status === 'loading' ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
                     Loading cabins...
                   </td>
                 </tr>
               ) : status === 'failed' ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-red-500">
+                  <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-red-500">
                     Error loading cabins
                   </td>
                 </tr>
               ) : !Array.isArray(cabins) || cabins.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
                     No cabins available
                   </td>
                 </tr>
@@ -100,6 +107,24 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {cabin.updated_at ? new Date(cabin.updated_at).toLocaleDateString() : '-'}
                       </td>
+                      {canEdit && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {/* TODO: Implementar edición */}}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <FaRegEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => {/* TODO: Implementar eliminación */}}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <RiDeleteBin6Line className="text-lg" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   )
                 })

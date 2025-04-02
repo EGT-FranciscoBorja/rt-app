@@ -3,12 +3,16 @@ import React, { useEffect, useState } from 'react'
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaDownload } from "react-icons/fa6";
-import { FaCloudUploadAlt, FaArrowLeft } from "react-icons/fa";
+import { FaCloudUploadAlt, FaArrowLeft, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import SearchButton from '@/components/search/searchButton';
 import Filters from '@/components/filters/filters';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchHotels } from '@/app/lib/features/hotels/hotelSlice';
+import { fetchHotels, selectHotelsStatus, selectHotels, selectPagination } from '@/app/lib/features/hotels/hotelSlice';
+import EditHotelModal from './EditHotelModal';
+import { handleEdit, handleDelete, Hotel } from './actions';
+import Link from 'next/link';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface HotelFilters {
   name: string;
@@ -36,6 +40,8 @@ function ListHotels() {
   const currentPage = useAppSelector((state) => state.hotels.currentPage);
   const totalPages = useAppSelector((state) => state.hotels.totalPages);
   const [activeFilters, setActiveFilters] = useState<HotelFilters | null>(null);
+  const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
+  const { canEdit } = usePermissions();
 
   useEffect(() => {
     if (status === 'idle') {
@@ -50,6 +56,50 @@ function ListHotels() {
 
   const handlePageChange = (page: number) => {
     dispatch(fetchHotels(page));
+  };
+
+  const handleEdit = (hotel: Hotel) => {
+    setEditingHotel(hotel);
+  };
+
+  const handleDelete = async (hotelId: number) => {
+    try {
+      const response = await fetch(`/api/hotels/${hotelId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete hotel');
+      }
+
+      // Recargar la página para actualizar la lista
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting hotel:', error);
+      // TODO: Mostrar mensaje de error al usuario
+    }
+  };
+
+  const handleSaveEdit = async (hotel: Hotel) => {
+    try {
+      const response = await fetch(`/api/hotels/${hotel.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(hotel),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update hotel');
+      }
+
+      setEditingHotel(null);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating hotel:', error);
+      // TODO: Mostrar mensaje de error al usuario
+    }
   };
 
   return (
@@ -67,16 +117,18 @@ function ListHotels() {
             </button>
             <h1 className="text-3xl font-bold text-gray-800">Hotel Management</h1>
           </div>
-          <div className="flex gap-3">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <FaDownload className="text-lg" />
-              Download Data
-            </button>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <FaCloudUploadAlt className="text-lg" />
-              Add New Hotel
-            </button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-3">
+              <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <FaDownload className="text-lg" />
+                Download Data
+              </button>
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <FaCloudUploadAlt className="text-lg" />
+                Add New Hotel
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 mb-4">
@@ -116,25 +168,27 @@ function ListHotels() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  {canEdit && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {status === 'loading' ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
                       Loading hotels...
                     </td>
                   </tr>
                 ) : status === 'failed' ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-red-500">
+                    <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-red-500">
                       Error loading hotels
                     </td>
                   </tr>
-                ) : hotels.length === 0 ? (
+                ) : !Array.isArray(hotels) || hotels.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
                       No hotels available
                     </td>
                   </tr>
@@ -160,20 +214,34 @@ function ListHotels() {
                         ${hotel.base_price.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          hotel.category === 5 ? 'bg-purple-100 text-purple-800' :
+                          hotel.category === 4 ? 'bg-blue-100 text-blue-800' :
+                          hotel.category === 3 ? 'bg-green-100 text-green-800' :
+                          hotel.category === 2 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
                           {hotel.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-900">
-                            <FaRegEdit className="text-lg" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            <RiDeleteBin6Line className="text-lg" />
-                          </button>
-                        </div>
-                      </td>
+                      {canEdit && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEdit(hotel)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <FaRegEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(hotel.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <RiDeleteBin6Line className="text-lg" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -228,6 +296,13 @@ function ListHotels() {
           </div>
         </div>
       </div>
+      {editingHotel && (
+        <EditHotelModal
+          hotel={editingHotel}
+          onClose={() => setEditingHotel(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   )
 }

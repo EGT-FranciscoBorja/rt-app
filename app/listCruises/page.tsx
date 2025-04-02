@@ -11,6 +11,7 @@ import { fetchCruises, selectCruisesStatus, selectCruises, selectPagination } fr
 import EditCruiseModal from './EditCruiseModal'
 import { handleEdit, handleDelete, Cruise } from './actions'
 import Link from 'next/link'
+import { usePermissions } from '../hooks/usePermissions'
 
 interface CruiseFilters {
   name: string
@@ -46,6 +47,7 @@ export default function ListCruisesPage() {
     capacityMin: '',
     capacityMax: ''
   })
+  const { canEdit } = usePermissions()
 
   useEffect(() => {
     dispatch(fetchCruises({
@@ -364,25 +366,27 @@ export default function ListCruisesPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  {canEdit && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {status === 'loading' ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                       Loading cruises...
                     </td>
                   </tr>
                 ) : status === 'failed' ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-red-500">
+                    <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-red-500">
                       Error loading cruises
                     </td>
                   </tr>
                 ) : !Array.isArray(cruises) || cruises.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                       No cruises available
                     </td>
                   </tr>
@@ -421,22 +425,24 @@ export default function ListCruisesPage() {
                           {cruise.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditClick(cruise)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaRegEdit className="text-lg" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(cruise.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <RiDeleteBin6Line className="text-lg" />
-                          </button>
-                        </div>
-                      </td>
+                      {canEdit && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditClick(cruise)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <FaRegEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(cruise.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <RiDeleteBin6Line className="text-lg" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}

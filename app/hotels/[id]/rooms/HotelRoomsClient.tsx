@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { FaRegEdit, FaArrowLeft, FaPlus, FaChevronLeft, FaChevronRight } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
+import { usePermissions } from '@/app/hooks/usePermissions'
 import { 
   fetchHotelRooms, 
   deleteHotelRoom,
@@ -39,6 +40,7 @@ interface HotelRoomFilters {
 export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { canEdit } = usePermissions()
   
   const rooms = useAppSelector(selectHotelRooms)
   const status = useAppSelector(selectHotelRoomsStatus)
@@ -150,18 +152,20 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
             </button>
             <h1 className="text-3xl font-bold text-gray-800">Hotel Rooms</h1>
           </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => {
-                setEditingRoom(null)
-                setShowForm(true)
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <FaPlus className="text-lg" />
-              New Room
-            </button>
-          </div>
+          {canEdit && (
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setEditingRoom(null)
+                  setShowForm(true)
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              >
+                <FaPlus className="text-lg" />
+                New Room
+              </button>
+            </div>
+          )}
         </div>
 
         {showForm && (
@@ -195,25 +199,27 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                {canEdit && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {status === 'loading' ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
                     Loading rooms...
                   </td>
                 </tr>
               ) : status === 'failed' ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-red-500">
+                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-red-500">
                     Error loading rooms
                   </td>
                 </tr>
-              ) : filteredRooms.length === 0 ? (
+              ) : !Array.isArray(rooms) || rooms.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
                     No rooms available
                   </td>
                 </tr>
@@ -222,29 +228,33 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
                   <tr key={room.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{room.name}</div>
+                      <div className="text-sm text-gray-500">{room.description}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{room.maximum_persons} persons</div>
+                      <div className="text-sm text-gray-500">{room.quantity} rooms</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${typeof room.base_price === 'number' ? room.base_price.toLocaleString() : '0'}
+                      ${room.base_price.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleEditRoom(room)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <FaRegEdit className="text-lg" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(room.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <RiDeleteBin6Line className="text-lg" />
-                        </button>
-                      </div>
-                    </td>
+                    {canEdit && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditRoom(room)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <FaRegEdit className="text-lg" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(room.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <RiDeleteBin6Line className="text-lg" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

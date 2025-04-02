@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from '../hooks'
 import { fetchUsers, selectUsersStatus, selectUsers, selectPagination } from '../lib/features/users/usersSlice'
 import EditUserModal from './EditUserModal'
 import { handleEdit, handleDelete, User } from './actions'
+import { usePermissions } from '../hooks/usePermissions'
 
 interface UserFilters {
   name: string
@@ -36,6 +37,7 @@ export default function ListUsersPage() {
     email: '',
     role: '',
   })
+  const { canEdit } = usePermissions()
 
   useEffect(() => {
     dispatch(fetchUsers({
@@ -305,26 +307,28 @@ export default function ListUsersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  {canEdit && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {status === 'loading' ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      Loading Users...
+                    <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
+                      Loading users...
                     </td>
                   </tr>
                 ) : status === 'failed' ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-red-500">
-                      Error loading Users
+                    <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-red-500">
+                      Error loading users
                     </td>
                   </tr>
                 ) : !Array.isArray(Users) || Users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      No Users available
+                    <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
+                      No users available
                     </td>
                   </tr>
                 ) : (
@@ -337,22 +341,24 @@ export default function ListUsersPage() {
                         <div className="text-sm text-gray-900 line-clamp-2">{User.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{Array.isArray(User.roles) ? User.roles.join(', ') : User.roles}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditClick({...User, roles: Array.isArray(User.roles) ? User.roles : [User.roles]})}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaRegEdit className="text-lg" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(User.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <RiDeleteBin6Line className="text-lg" />
-                          </button>
-                        </div>
-                      </td>
+                      {canEdit && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditClick({...User, roles: Array.isArray(User.roles) ? User.roles : [User.roles]})}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <FaRegEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(User.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <RiDeleteBin6Line className="text-lg" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
