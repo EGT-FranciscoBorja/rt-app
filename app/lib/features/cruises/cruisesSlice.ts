@@ -58,59 +58,30 @@ if (!API_TOKEN) {
 export const fetchCruises = createAsyncThunk(
   'cruises/fetchCruises',
   async ({ page, filters }: FetchCruisesParams) => {
-    if (!API_TOKEN) {
-      throw new Error('API configuration is incomplete. Please check your environment variables.')
-    }
-
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      ...(filters.name && { name: filters.name }),
-      ...(filters.category && { category: filters.category }),
-      ...(filters.priceMin && { price_min: filters.priceMin }),
-      ...(filters.priceMax && { price_max: filters.priceMax }),
-      ...(filters.capacityMin && { capacity_min: filters.capacityMin }),
-      ...(filters.capacityMax && { capacity_max: filters.capacityMax })
-    })
-
     try {
-      console.log('Making API request with token:', API_TOKEN.substring(0, 10) + '...')
-      
-      const response = await fetch(`//api/v1/cruise?${queryParams.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${API_TOKEN}`,
-        },
-        credentials: 'include',
-        mode: 'cors',
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        ...(filters.name && { name: filters.name }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.priceMin && { priceMin: filters.priceMin }),
+        ...(filters.priceMax && { priceMax: filters.priceMax }),
+        ...(filters.capacityMin && { capacityMin: filters.capacityMin }),
+        ...(filters.capacityMax && { capacityMax: filters.capacityMax })
       })
 
+      const response = await fetch(`/api/cruises?${queryParams.toString()}`)
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('API Error:', {
+        console.error('Error fetching cruises:', {
           status: response.status,
           statusText: response.statusText,
-          data: errorData,
-          url: `/api/v1/cruise?${queryParams.toString()}`,
-          headers: Object.fromEntries(response.headers.entries()),
-          token: API_TOKEN.substring(0, 10) + '...'
+          data: errorData
         })
-        
-        if (response.status === 403) {
-          throw new Error('No tienes autorización para acceder a este recurso. Por favor, verifica tu token de API.')
-        }
-        
-        if (response.status === 502) {
-          throw new Error('Error de conexión con el servidor. Por favor, intenta nuevamente en unos momentos.')
-        }
-        
-        throw new Error(`Failed to fetch cruises: ${response.status}`)
+        throw new Error(errorData.message || 'Error al obtener los cruceros')
       }
 
       const result = await response.json()
-      console.log('API Response:', result)
-
       if (!result.success) {
         throw new Error(result.message || 'Error al obtener los cruceros')
       }
