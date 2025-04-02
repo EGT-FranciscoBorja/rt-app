@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { logout, checkAuth } from '@/app/lib/features/auth/authSlice'
 import { FiSun, FiMoon, FiLogOut } from 'react-icons/fi'
 import { RootState } from '@/app/lib/store'
+import Logo from '@/public/rtlogo.svg'
 
 export default function Navbar() {
   const dispatch = useAppDispatch()
@@ -87,7 +88,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <Image src="/rtlogo.svg" alt="Logo" width={40} height={40} />
+                <Image src={Logo} alt="Logo" width={40} height={40} />
             </Link>
           </div>
 
