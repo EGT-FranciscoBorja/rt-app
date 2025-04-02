@@ -6,6 +6,14 @@ export const metadata: Metadata = {
   description: 'Manage hotel rooms'
 }
 
-export default function HotelRoomsPage({ params }: { params: { id: string } }) {
-  return <HotelRoomsClient hotelId={params.id} />
+interface PageProps {
+  params: Promise<{
+    id: string
+  }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function HotelRoomsPage({ params, searchParams }: PageProps) {
+  const [resolvedParams] = await Promise.all([params, searchParams])
+  return <HotelRoomsClient hotelId={resolvedParams.id} />
 }
