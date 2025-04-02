@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
-import { User } from './actions'
+import { User, ApiError } from './actions'
 
 interface EditUserModalProps {
   isOpen: boolean
@@ -64,10 +64,10 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
       await onSave(updatedUser)
       setErrors({}) // Clear errors on success
       onClose()
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving user:', error)
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors)
+      if ((error as ApiError).response?.data?.errors) {
+        setErrors((error as ApiError).response.data.errors)
       } else {
         setErrors({
           general: ['An unexpected error occurred. Please try again.']

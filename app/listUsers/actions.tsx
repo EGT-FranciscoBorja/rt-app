@@ -12,6 +12,21 @@ export interface User {
   updated_at: string
 }
 
+export interface ApiErrorResponse {
+  success: boolean
+  message: string
+  errors: {
+    [key: string]: string[]
+  }
+  data: null
+}
+
+export interface ApiError {
+  response: {
+    data: ApiErrorResponse
+  }
+}
+
 export const handleEdit = async (user: User) => {
   try {
     // Asegurarnos de que la categoría sea un número
@@ -34,7 +49,7 @@ export const handleEdit = async (user: User) => {
     const data = await response.json()
 
     if (!response.ok) {
-      throw { response: { data } }
+      throw { response: { data } } as ApiError
     }
 
     return data
