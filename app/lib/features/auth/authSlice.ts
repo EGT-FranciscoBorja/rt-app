@@ -22,7 +22,7 @@ const initialState: AuthState = {
 }
 
 // Función auxiliar para asegurar que roles sea un array
-const ensureRolesArray = (roles: any): string[] => {
+const ensureRolesArray = (roles: string | string[] | null | undefined): string[] => {
   if (!roles) return []
   if (Array.isArray(roles)) return roles
   if (typeof roles === 'string') return [roles]

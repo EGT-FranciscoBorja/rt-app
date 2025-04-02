@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const userCookie = cookieStore.get('user')
     const tokenCookie = cookieStore.get('authToken')
 
@@ -14,34 +14,22 @@ export async function GET() {
       )
     }
 
-    let user
     try {
-      user = JSON.parse(userCookie.value)
+      const user = JSON.parse(userCookie.value)
+      return NextResponse.json({
+        success: true,
+        user,
+        token: tokenCookie.value
+      })
     } catch (error) {
-      console.error('Error parsing user cookie:', error)
+      console.error('Error processing user data:', error)
       return NextResponse.json(
         { success: false, message: 'Error processing user data' },
-        { status: 401 }
+        { status: 500 }
       )
     }
-
-    // Ensure roles is an array
-    const roles = Array.isArray(user.roles) 
-      ? user.roles 
-      : typeof user.roles === 'string' 
-        ? user.roles.split(',').map((role: string) => role.trim())
-        : []
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        ...user,
-        roles: roles
-      },
-      token: tokenCookie.value
-    })
   } catch (error) {
-    console.error('Authentication check error:', error)
+    console.error('Error checking authentication:', error)
     return NextResponse.json(
       { success: false, message: 'Error checking authentication' },
       { status: 500 }
