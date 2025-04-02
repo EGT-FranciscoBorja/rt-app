@@ -126,6 +126,26 @@ interface CharterState {
   error: string | null
 }
 
+interface HotelState {
+  items: Array<{
+    id: number
+    name: string
+    description: string
+    website: string
+    country: string
+    city: string
+    location: string
+    base_price: number
+    category: number
+    created_at: string
+    updated_at: string
+  }>
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  currentPage: number
+  totalPages: number
+  totalItems: number
+}
+
 export interface RootState {
   cruises: CruiseState
   users: UserState
@@ -134,6 +154,7 @@ export interface RootState {
   departures: DepartureState
   itinerariesPrices: ItineraryPriceState
   charters: CharterState
+  hotels: HotelState
 }
 
 export const store = configureStore({
@@ -145,6 +166,7 @@ export const store = configureStore({
     departures: departuresReducer,
     itinerariesPrices: itinerariesPricesReducer,
     charters: chartersReducer,
+    hotels: hotelsReducer
   },
 })
 
