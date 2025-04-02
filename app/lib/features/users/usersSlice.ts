@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { RootState } from '../../store'
 
 export interface User {
   id: number
@@ -135,12 +136,12 @@ const usersSlice = createSlice({
   },
 })
 
-export const selectUsers = (state: { users: UserState }) => {
+export const selectUsers = (state: RootState) => {
   const items = state.users.items
   return Array.isArray(items) ? items : []
 }
 
-export const selectUsersStatus = (state: { users: UserState }) => state.users.status
-export const selectPagination = (state: { users: UserState }) => state.users.pagination
+export const selectUsersStatus = (state: RootState) => state.users.status
+export const selectPagination = (state: RootState) => state.users.pagination
 
 export default usersSlice.reducer

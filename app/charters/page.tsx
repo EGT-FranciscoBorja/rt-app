@@ -4,8 +4,9 @@ import { useSearchParams } from 'next/navigation'
 import ChartersList from '@/components/ChartersList'
 import { FaArrowLeft } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function ChartersPage() {
+function ChartersContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const cruiseId = Number(searchParams.get('cruiseId'))
@@ -28,5 +29,13 @@ export default function ChartersPage() {
       </div>
       <ChartersList cruiseId={cruiseId} itineraryId={itineraryId} />
     </div>
+  )
+}
+
+export default function ChartersPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChartersContent />
+    </Suspense>
   )
 } 

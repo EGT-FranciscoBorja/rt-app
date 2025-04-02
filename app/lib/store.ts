@@ -84,11 +84,17 @@ interface UserState {
     id: number
     name: string
     email: string
+    roles: string
     created_at: string
     updated_at: string
   }>
   status: 'idle' | 'loading' | 'succeeded' | 'failed'
-  error: string | null
+  pagination: {
+    current_page: number
+    last_page: number
+    total: number
+    per_page: number
+  }
 }
 
 interface PriceState {
