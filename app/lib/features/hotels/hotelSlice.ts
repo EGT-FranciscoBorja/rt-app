@@ -1,37 +1,67 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
 export interface Hotel {
   id: number
   name: string
-  city: string
+  description: string
+  website: string
   country: string
-  web: string
-  phones: string[]
-  email: string
-  contact: string
-  category: string
-  room_type: string
-  room_category: string
-  net_price: number
-  holiday_price: number
-  year: number
+  city: string
+  location: string
+  base_price: number
+  category: number
+  created_at: string
+  updated_at: string
 }
 
-export const HotelSlice = createSlice({
-  name: 'hotels',
-  initialState: [] as Hotel[],
-  reducers: {
-    addHotel: (state, action: PayloadAction<Hotel>) => {
-      state.push(action.payload)
-    },
-    removeHotel: (state, action: PayloadAction<number>) => {
-      return state.filter((hotel) => hotel.id !== action.payload)
-    },
-  },
+interface HotelState {
+  items: Hotel[]
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  currentPage: number
+  totalPages: number
+  totalItems: number
+}
 
+const initialState: HotelState = {
+  items: [],
+  status: 'idle',
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0
+}
+
+export const fetchHotels = createAsyncThunk(
+  'hotels/fetchHotels',
+  async (page: number = 1) => {
+    const response = await fetch(`/api/hotels?page=${page}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch hotels')
+    }
+    const data = await response.json()
+    return data.data
+  }
+)
+
+const hotelSlice = createSlice({
+  name: 'hotels',
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchHotels.pending, (state) => {
+        state.status = 'loading'
+      })
+      .addCase(fetchHotels.fulfilled, (state, action) => {
+        state.status = 'succeeded'
+        state.items = action.payload.data
+        state.currentPage = action.payload.current_page
+        state.totalPages = action.payload.last_page
+        state.totalItems = action.payload.total
+      })
+      .addCase(fetchHotels.rejected, (state) => {
+        state.status = 'failed'
+      })
+  }
 })
 
-export const { addHotel, removeHotel } = HotelSlice.actions
-
-export default HotelSlice.reducer
+export default hotelSlice.reducer

@@ -7,6 +7,7 @@ import departuresReducer from './features/departures/departuresSlice'
 import usersReducer from './features/users/usersSlice'
 import itinerariesPricesReducer from './features/itineraries/itinerariesPricesSlice'
 import chartersReducer from './features/charters/chartersSlice'
+import hotelsReducer from './features/hotels/hotelSlice'
 
 // Habilitar el plugin MapSet de Immer
 enableMapSet()

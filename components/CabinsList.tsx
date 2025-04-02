@@ -6,6 +6,17 @@ import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/feature
 import { FaArrowLeft } from "react-icons/fa"
 import { useRouter } from 'next/navigation'
 
+interface Cabin {
+  id: number
+  name: string
+  description: string
+  cruise_id: number
+  price: number
+  capacity: number
+  created_at: string
+  updated_at: string
+}
+
 interface CabinsListProps {
   cruiseId: number
 }
@@ -13,7 +24,7 @@ interface CabinsListProps {
 function CabinsList({ cruiseId }: CabinsListProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const cabins = useAppSelector(selectCabins)
+  const cabins = useAppSelector(selectCabins) as Cabin[]
   const status = useAppSelector(selectCabinsStatus)
 
   useEffect(() => {
