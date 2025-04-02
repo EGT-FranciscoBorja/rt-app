@@ -11,6 +11,7 @@ export default function CruiseAvailability() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<Cruise[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   
   // Get today's date and 4 days from now
   const today = new Date().toISOString().split('T')[0];
@@ -31,6 +32,7 @@ export default function CruiseAvailability() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setHasSearched(true);
     
     try {
       const response = await searchAvailability(formData);
@@ -224,7 +226,7 @@ export default function CruiseAvailability() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {Object.values(itinerary.departures).map((departure) => (
-                            departure.cabins.map((cabin) => (
+                            Array.isArray(departure.cabins) ? departure.cabins.map((cabin) => (
                               <tr key={`${departure.departure_id}-${cabin.cabin_id}`}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {formatDate(departure.start_date)}
@@ -239,7 +241,7 @@ export default function CruiseAvailability() {
                                   ${cabin.price.toLocaleString()}
                                 </td>
                               </tr>
-                            ))
+                            )) : null
                           ))}
                         </tbody>
                       </table>
@@ -249,8 +251,14 @@ export default function CruiseAvailability() {
               </div>
             ))}
           </div>
+        ) : hasSearched ? (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <p className="text-gray-600">
+              No cruises found for the selected criteria. Please try different dates or filters.
+            </p>
+          </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
             <p className="text-gray-600">
               Use the filters on the left to search for available cruises based on your preferences.
               Required fields are marked with a red asterisk (*).
