@@ -31,11 +31,13 @@ export const handleEdit = async (user: User) => {
       body: JSON.stringify(userData),
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      throw new Error('Failed to update user')
+      throw { response: { data } }
     }
 
-    return await response.json()
+    return data
   } catch (error) {
     console.error('Error updating user:', error)
     throw error

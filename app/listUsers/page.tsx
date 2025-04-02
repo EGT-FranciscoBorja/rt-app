@@ -70,8 +70,9 @@ export default function ListUsersPage() {
         filters: activeFilters
       }))
       setEditingUser(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating User:', error)
+      throw error
     }
   }
 
