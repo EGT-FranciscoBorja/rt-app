@@ -4,15 +4,21 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('authToken')
   const isLoginPage = request.nextUrl.pathname === '/login'
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
 
-  // Si no hay token y no estamos en la página de login, redirigir al login
+  // Allow API routes to pass through
+  if (isApiRoute) {
+    return NextResponse.next()
+  }
+
+  // If no token and not on login page, redirect to login
   if (!token && !isLoginPage) {
     const response = NextResponse.redirect(new URL('/login', request.url))
-    response.cookies.set('redirectMessage', 'Por favor inicia sesión para acceder a esta página')
+    response.cookies.set('redirectMessage', 'Please login to access this page')
     return response
   }
 
-  // Si hay token y estamos en la página de login, redirigir al inicio
+  // If token exists and on login page, redirect to home
   if (token && isLoginPage) {
     return NextResponse.redirect(new URL('/', request.url))
   }

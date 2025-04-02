@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { login } from './actions'
+import { useAppDispatch } from '@/app/hooks'
+import { login } from '@/app/lib/features/auth/authSlice'
 
 export default function LoginPage() {
   const router = useRouter()
+  const dispatch = useAppDispatch()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -15,19 +17,14 @@ export default function LoginPage() {
 
     try {
       console.log('Iniciando proceso de login...')
-      const result = await login(formData)
-      console.log('Resultado del login:', result)
+      const result = await dispatch(login({
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+      })).unwrap()
       
-      if (result.success) {
-        console.log('Login exitoso, redirigiendo...')
-        // Redirigir al inicio
-        router.push('/')
-        // Forzar una recarga después de la redirección
-        router.refresh()
-      } else {
-        console.error('Error en login:', result.message)
-        setError(result.message || 'Error en el inicio de sesión')
-      }
+      console.log('Resultado del login:', result)
+      router.push('/')
+      router.refresh()
     } catch (error) {
       console.error('Error al procesar el inicio de sesión:', error)
       setError('Error al procesar el inicio de sesión. Por favor, intente nuevamente.')
