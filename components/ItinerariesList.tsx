@@ -8,7 +8,6 @@ import { fetchPrices, selectPrices, updatePrice } from '@/app/lib/features/itine
 import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/features/cabins/cabinsSlice'
 import { FaRegEdit, FaPlus, FaTimes } from 'react-icons/fa'
 import { RiDeleteBin6Line } from 'react-icons/ri'
-import Link from 'next/link'
 import ItineraryPricesForm from './ItineraryPricesForm'
 import { usePermissions } from '@/app/hooks/usePermissions'
 
