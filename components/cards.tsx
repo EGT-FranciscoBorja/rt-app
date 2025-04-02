@@ -35,6 +35,14 @@ const cards_info = (): CardInfo[] => [
     icon: <FaUserShield />,
 
   },
+  {
+    id: 5,
+    path: '/cruises/availability',
+    title: 'Cruises Availability',
+    description: 'Availability and prices for cruises',
+    icon: <GiShipWheel />,
+
+  },
 ]
 
 const cards = () => {
