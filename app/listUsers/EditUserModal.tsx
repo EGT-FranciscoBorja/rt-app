@@ -15,6 +15,7 @@ interface FormData {
   name: string;
   email: string;
   roles: string[];
+  password?: string;
 }
 
 export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUserModalProps) {
@@ -22,6 +23,7 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
     name: '',
     email: '',
     roles: [],
+    password: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -43,10 +45,12 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
     try {
       const updatedUser = {
         ...user,
-        ...formData,
+        name: formData.name,
+        email: formData.email,
+        roles: formData.roles,
+        ...(formData.password && { password: formData.password }),
       }
       await onSave(updatedUser)
-
 
       onClose()
     } catch (error) {
@@ -98,6 +102,21 @@ export default function EditUserModal({ isOpen, onClose, user, onSave }: EditUse
               required
               disabled={isSubmitting}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              value={formData.password || ''}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="input"
+              minLength={8}
+              disabled={isSubmitting}
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Leave blank to keep the current password. If you enter a new password, it must be at least 8 characters long.
+            </p>
           </div>
 
           <div>
