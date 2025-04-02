@@ -142,7 +142,12 @@ function ListHotels() {
                   hotels.map((hotel) => (
                     <tr key={hotel.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
+                        <div 
+                          className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                          onClick={() => router.push(`/hotels/${hotel.id}/rooms`)}
+                        >
+                          {hotel.name}
+                        </div>
                         <div className="text-sm text-gray-500">{hotel.city}, {hotel.country}</div>
                       </td>
                       <td className="px-6 py-4">
