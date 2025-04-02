@@ -4,11 +4,12 @@ import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
   try {
-    const response = await fetch(`/api/v1/login`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/login`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
       },
       body: JSON.stringify({
         email: formData.get('email'),
@@ -16,14 +17,20 @@ export async function login(formData: FormData) {
       }),
     })
 
-    const data = await response.json()
-
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Login Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData
+      })
       return {
         success: false,
-        message: data.message || 'Error en el inicio de sesión'
+        message: errorData.message || 'Error en el inicio de sesión'
       }
     }
+
+    const data = await response.json()
 
     if (!data.success || !data.data?.token) {
       return {

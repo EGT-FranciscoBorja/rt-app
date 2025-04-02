@@ -14,18 +14,23 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      console.log('Iniciando proceso de login...')
       const result = await login(formData)
+      console.log('Resultado del login:', result)
       
       if (result.success) {
+        console.log('Login exitoso, redirigiendo...')
         // Redirigir al inicio
         router.push('/')
         // Forzar una recarga después de la redirección
         router.refresh()
       } else {
+        console.error('Error en login:', result.message)
         setError(result.message || 'Error en el inicio de sesión')
       }
-    } catch {
-      setError('Error al procesar el inicio de sesión')
+    } catch (error) {
+      console.error('Error al procesar el inicio de sesión:', error)
+      setError('Error al procesar el inicio de sesión. Por favor, intente nuevamente.')
     } finally {
       setIsSubmitting(false)
     }
