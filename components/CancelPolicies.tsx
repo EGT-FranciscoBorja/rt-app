@@ -21,7 +21,7 @@ export default function CancelPolicies({ policies }: CancelPoliciesProps) {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
-                This hotel doesn't have cancellation policies yet. Please contact the manager for more information.
+                This hotel doesn&apos;t have cancellation policies yet. Please contact the manager for more information.
               </p>
             </div>
           </div>

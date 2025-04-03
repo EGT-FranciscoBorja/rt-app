@@ -41,6 +41,25 @@ interface Hotel {
   category: number
   created_at: string
   updated_at: string
+  seasons: Array<{
+    id: number
+    name: string
+    description: string
+    start_date: string
+    end_date: string
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
+  cancel_policies: Array<{
+    id: number
+    name: string
+    description: string
+    days: number
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
 }
 
 export default function ListHotelsPage() {
@@ -66,7 +85,11 @@ export default function ListHotelsPage() {
   }
 
   const handleEdit = (hotel: Hotel) => {
-    setEditingHotel(hotel)
+    setEditingHotel({
+      ...hotel,
+      seasons: hotel.seasons || [],
+      cancel_policies: hotel.cancel_policies || []
+    })
   }
 
   const handleDelete = async (hotelId: number) => {
@@ -220,7 +243,11 @@ export default function ListHotelsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleEdit(hotel)}
+                                onClick={() => handleEdit({
+                                  ...hotel,
+                                  seasons: [],
+                                  cancel_policies: []
+                                })}
                                 className="text-blue-600 hover:text-blue-900"
                               >
                                 <FaRegEdit className="text-lg" />

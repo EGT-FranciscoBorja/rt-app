@@ -13,7 +13,7 @@ interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function HotelRoomsPage({ params, searchParams }: PageProps) {
-  const [resolvedParams] = await Promise.all([params, searchParams])
+export default async function HotelRoomsPage({ params }: PageProps) {
+  const resolvedParams = await params
   return <HotelRoomsClient hotelId={resolvedParams.id} />
 }
