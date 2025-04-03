@@ -8,9 +8,10 @@ type RouteContext = {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
+    const { id: hotelId } = await context.params
     const body = await request.json()
     console.log('Received body:', body) // Para debugging
 
@@ -29,7 +30,7 @@ export async function PUT(
 
     console.log('Formatted body:', formattedBody) // Para debugging
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel/${params.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel/${hotelId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

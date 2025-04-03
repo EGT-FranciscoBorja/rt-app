@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import { fetchHotels } from '@/app/lib/features/hotels/hotelSlice'
+import { fetchHotels, setItems } from '@/app/lib/features/hotels/hotelSlice'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { FaRegEdit, FaDownload, FaCloudUploadAlt, FaArrowLeft } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
@@ -64,7 +64,7 @@ interface Hotel {
 export default function ListHotelsPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const hotels = useAppSelector((state) => state.hotels.items)
+  const hotels = useAppSelector((state) => state.hotels.items) as Hotel[]
   const status = useAppSelector((state) => state.hotels.status)
   const [activeFilters, setActiveFilters] = useState<HotelFilters | null>(null)
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null)
@@ -77,6 +77,17 @@ export default function ListHotelsPage() {
       dispatch(fetchHotels(1))
     }
   }, [dispatch, status])
+
+  useEffect(() => {
+    if (status === 'succeeded' && hotels) {
+      const hotelsWithDefaults = hotels.map(hotel => ({
+        ...hotel,
+        seasons: hotel.seasons || [],
+        cancel_policies: hotel.cancel_policies || []
+      }))
+      dispatch(setItems(hotelsWithDefaults))
+    }
+  }, [status, hotels, dispatch])
 
   const handleApplyFilters = (filters: FilterValues) => {
     setActiveFilters(filters as HotelFilters)

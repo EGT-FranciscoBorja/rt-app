@@ -12,6 +12,25 @@ export interface Hotel {
   category: number
   created_at: string
   updated_at: string
+  seasons: Array<{
+    id: number
+    name: string
+    description: string
+    start_date: string
+    end_date: string
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
+  cancel_policies: Array<{
+    id: number
+    name: string
+    description: string
+    days: number
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
 }
 
 interface HotelState {
@@ -45,7 +64,11 @@ export const fetchHotels = createAsyncThunk(
 const hotelSlice = createSlice({
   name: 'hotels',
   initialState,
-  reducers: {},
+  reducers: {
+    setItems: (state, action) => {
+      state.items = action.payload
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchHotels.pending, (state) => {
@@ -64,4 +87,5 @@ const hotelSlice = createSlice({
   }
 })
 
+export const { setItems } = hotelSlice.actions
 export default hotelSlice.reducer
