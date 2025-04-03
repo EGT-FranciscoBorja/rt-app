@@ -53,7 +53,7 @@ const Cards = () => {
 
   return (
     <div className='w-full'>
-      <div className='grid grid-cols-4 gap-4 sm:grid-cols-1 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-4 sm:grid-cols-1 lg:grid-cols-3'>
         {cards.map((card) => (
           <Link
             key={card.id}
