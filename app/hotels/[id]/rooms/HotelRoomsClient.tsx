@@ -18,6 +18,7 @@ import {
 import HotelRoomFilters from '@/components/filters/HotelRoomFilters'
 import HotelRoomForm, { HotelRoomFormData } from '@/components/HotelRoomForm'
 import HotelSeasons from '@/components/HotelSeasons'
+import CancelPolicies from '@/components/CancelPolicies'
 
 interface HotelRoom {
   id: number
@@ -27,14 +28,6 @@ interface HotelRoom {
   quantity: number
   base_price: number
   maximum_persons: number
-  created_at: string
-  updated_at: string
-}
-
-interface CancelPolicy {
-  id: number
-  name: string
-  description: string
   created_at: string
   updated_at: string
 }
@@ -59,7 +52,15 @@ interface HotelData {
     created_at: string
     updated_at: string
   }>
-  cancel_policies: CancelPolicy[]
+  cancel_policies: Array<{
+    id: number
+    name: string
+    description: string
+    days: number
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
 }
 
 interface HotelRoomFilters {
@@ -100,8 +101,27 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
           },
         })
         if (!response.ok) throw new Error('Failed to fetch hotel data')
-        const data = await response.json()
-        setHotelData(data.data)
+        const responseData = await response.json()
+        
+        // Extraer los datos del hotel de la respuesta
+        const hotelData = responseData.data
+        
+        // Asegurarse de que los datos tengan la estructura correcta
+        const formattedData: HotelData = {
+          id: hotelData.id,
+          name: hotelData.name,
+          description: hotelData.description,
+          website: hotelData.website,
+          country: hotelData.country,
+          city: hotelData.city,
+          location: hotelData.location,
+          base_price: hotelData.base_price,
+          category: hotelData.category,
+          seasons: hotelData.seasons || [],
+          cancel_policies: hotelData.cancel_policies || []
+        }
+        
+        setHotelData(formattedData)
       } catch (error) {
         console.error('Error fetching hotel data:', error)
       }
@@ -221,17 +241,17 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
               >
                 <FaPlus className="text-lg" />
-                New Room
+                Add Room
               </button>
             </div>
           )}
         </div>
 
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl font-bold mb-4">
-                {editingRoom ? 'Edit Room' : 'Create New Room'}
+                {editingRoom ? 'Edit Room' : 'Add New Room'}
               </h2>
               <HotelRoomForm
                 initialData={editingRoom || undefined}
@@ -251,77 +271,86 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                {canEdit && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {status === 'loading' ? (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
-                    Loading rooms...
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  {canEdit && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  )}
                 </tr>
-              ) : status === 'failed' ? (
-                <tr>
-                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-red-500">
-                    Error loading rooms
-                  </td>
-                </tr>
-              ) : !Array.isArray(rooms) || rooms.length === 0 ? (
-                <tr>
-                  <td colSpan={canEdit ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
-                    No rooms available
-                  </td>
-                </tr>
-              ) : (
-                filteredRooms.map((room) => (
-                  <tr key={room.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{room.name}</div>
-                      <div className="text-sm text-gray-500">{room.description}</div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {status === 'loading' ? (
+                  <tr>
+                    <td colSpan={canEdit ? 4 : 3} className="px-4 py-4 text-center text-gray-500">
+                      Loading rooms...
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{room.maximum_persons} persons</div>
-                      <div className="text-sm text-gray-500">{room.quantity} rooms</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${room.base_price.toLocaleString()}
-                    </td>
-                    {canEdit && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditRoom(room)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <FaRegEdit className="text-lg" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(room.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <RiDeleteBin6Line className="text-lg" />
-                          </button>
-                        </div>
-                      </td>
-                    )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : status === 'failed' ? (
+                  <tr>
+                    <td colSpan={canEdit ? 4 : 3} className="px-4 py-4 text-center text-red-500">
+                      Error loading rooms
+                    </td>
+                  </tr>
+                ) : !Array.isArray(rooms) || rooms.length === 0 ? (
+                  <tr>
+                    <td colSpan={canEdit ? 4 : 3} className="px-4 py-4 text-center text-gray-500">
+                      No rooms available
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRooms.map((room) => (
+                    <tr key={room.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-gray-900">{room.name}</div>
+                        <div className="text-xs text-gray-500 line-clamp-2">{room.description}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{room.maximum_persons} persons</div>
+                        <div className="text-xs text-gray-500">{room.quantity} units</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">${room.base_price.toLocaleString()}</div>
+                      </td>
+                      {canEdit && (
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditRoom(room)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Edit room"
+                            >
+                              <FaRegEdit className="text-lg" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(room.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete room"
+                            >
+                              <RiDeleteBin6Line className="text-lg" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {hotelData && <HotelSeasons seasons={hotelData.seasons} />}
+        {hotelData && (
+          <div className="mt-8 space-y-8">
+            <HotelSeasons seasons={hotelData.seasons} />
+            <CancelPolicies policies={hotelData.cancel_policies} />
+          </div>
+        )}
       </div>
     </div>
   )
