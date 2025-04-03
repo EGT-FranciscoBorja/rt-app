@@ -17,13 +17,35 @@ export interface Departure {
 export interface Itinerary {
   itinerary_id: number;
   itinerary_name: string;
-  departures: { [key: string]: Departure };
+  departures: Departure[];
 }
 
 export interface Cruise {
   cruise_id: number;
   cruise_name: string;
-  itineraries: { [key: string]: Itinerary };
+  itineraries: Itinerary[];
+}
+
+export interface PaginationLink {
+  url: string | null;
+  label: string;
+  active: boolean;
+}
+
+export interface PaginatedData {
+  current_page: number;
+  data: Cruise[];
+  first_page_url: string;
+  from: number;
+  last_page: number;
+  last_page_url: string;
+  links: PaginationLink[];
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number;
+  total: number;
 }
 
 export interface ApiResponse {
@@ -32,7 +54,7 @@ export interface ApiResponse {
   errors: null | {
     [key: string]: string[];
   };
-  data: Cruise[];
+  data: PaginatedData;
 }
 
 export interface ApiErrorResponse {
@@ -57,6 +79,7 @@ export interface SearchParams {
   category?: string;
   minPrice?: string;
   maxPrice?: string;
+  page?: string;
 }
 
 export const searchAvailability = async (params: SearchParams) => {
