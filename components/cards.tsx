@@ -42,6 +42,14 @@ const Cards = () => {
       icon: <GiShipWheel />,
   
     },
+    {
+      id: 6,
+      path: '/hotels/availability',
+      title: 'Hotels Availability',
+      description: 'Availability and prices for hotels',
+      icon: <GiShipWheel />,
+  
+    },
     ...(isSuperAdmin ? [{
       id: 4,
       path: '/listUsers',
