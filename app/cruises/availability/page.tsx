@@ -27,8 +27,8 @@ export default function CruiseAvailability() {
     check_out: fourDaysFromNowStr,
     persons: 1,
     category: '',
-    minPrice: '',
-    maxPrice: ''
+    price_min: '',
+    price_max: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -170,8 +170,8 @@ export default function CruiseAvailability() {
                 <div className="flex gap-2">
                   <input
                     type="number"
-                    name="minPrice"
-                    value={formData.minPrice}
+                    name="price_min"
+                    value={formData.price_min}
                     onChange={handleChange}
                     className="input"
                     placeholder="Min"
@@ -180,8 +180,8 @@ export default function CruiseAvailability() {
                   />
                   <input
                     type="number"
-                    name="maxPrice"
-                    value={formData.maxPrice}
+                    name="price_max"
+                    value={formData.price_max}
                     onChange={handleChange}
                     className="input"
                     placeholder="Max"
@@ -233,7 +233,16 @@ export default function CruiseAvailability() {
               {searchResults.map((cruise) => (
                 <div key={cruise.cruise_id} className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-800">{cruise.cruise_name}</h2>
+                    <div className="flex items-center gap-4">
+                      <h2 className="text-2xl font-bold text-gray-800">{cruise.cruise_name}</h2>
+                      <span className="px-3 py-1 text-sm font-medium rounded-full bg-indigo-100 text-indigo-800">
+                        {cruise.category === 1 && 'Basic'}
+                        {cruise.category === 2 && 'Standard'}
+                        {cruise.category === 3 && 'Premium'}
+                        {cruise.category === 4 && 'Luxury'}
+                        {cruise.category === 5 && 'Ultra Luxury'}
+                      </span>
+                    </div>
                   </div>
                   
                   {cruise.itineraries.map((itinerary) => (

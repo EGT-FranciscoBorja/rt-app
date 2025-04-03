@@ -23,6 +23,7 @@ export interface Itinerary {
 export interface Cruise {
   cruise_id: number;
   cruise_name: string;
+  category: number;
   itineraries: Itinerary[];
 }
 
@@ -77,8 +78,8 @@ export interface SearchParams {
   check_out: string;
   persons: number;
   category?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  price_min?: string;
+  price_max?: string;
   page?: string;
 }
 
