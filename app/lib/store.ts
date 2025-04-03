@@ -10,6 +10,7 @@ import chartersReducer from './features/charters/chartersSlice'
 import hotelsReducer from './features/hotels/hotelSlice'
 import hotelRoomsReducer from './features/hotelRooms/hotelRoomsSlice'
 import authReducer from './features/auth/authSlice'
+import seasonsReducer from './features/seasons/seasonSlice'
 
 // Habilitar el plugin MapSet de Immer
 enableMapSet()
@@ -176,6 +177,23 @@ interface AuthState {
   error: string | null
 }
 
+interface SeasonState {
+  items: Array<{
+    id: number
+    name: string
+    description: string
+    start_date: string
+    end_date: string
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
+  status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  currentPage: number
+  totalPages: number
+  totalItems: number
+}
+
 export interface RootState {
   cruises: CruiseState
   users: UserState
@@ -187,6 +205,7 @@ export interface RootState {
   hotels: HotelState
   hotelRooms: HotelRoomState
   auth: AuthState
+  seasons: SeasonState
 }
 
 export const store = configureStore({
@@ -200,7 +219,8 @@ export const store = configureStore({
     charters: chartersReducer,
     hotels: hotelsReducer,
     hotelRooms: hotelRoomsReducer,
-    auth: authReducer
+    auth: authReducer,
+    seasons: seasonsReducer
   },
 })
 

@@ -12,8 +12,8 @@ interface HotelRoomFiltersProps {
 
 function HotelRoomFilters({ filters, onFilterChange }: HotelRoomFiltersProps) {
   return (
-    <div className="w-64 bg-white p-4 rounded-lg shadow-md">
-      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
