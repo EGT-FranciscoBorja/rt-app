@@ -6,7 +6,6 @@ import { fetchHotels } from '@/app/lib/features/hotels/hotelSlice'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { FaRegEdit, FaDownload, FaCloudUploadAlt, FaArrowLeft } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
-import SearchButton from '@/components/search/searchButton'
 import Filters from '@/components/filters/filters'
 import { useRouter } from 'next/navigation'
 import EditHotelModal from './EditHotelModal'
@@ -67,10 +66,10 @@ export default function ListHotelsPage() {
   const dispatch = useAppDispatch()
   const hotels = useAppSelector((state) => state.hotels.items)
   const status = useAppSelector((state) => state.hotels.status)
-  const currentPage = useAppSelector((state) => state.hotels.currentPage)
-  const totalPages = useAppSelector((state) => state.hotels.totalPages)
   const [activeFilters, setActiveFilters] = useState<HotelFilters | null>(null)
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const { canEdit } = usePermissions()
 
   useEffect(() => {
@@ -81,8 +80,47 @@ export default function ListHotelsPage() {
 
   const handleApplyFilters = (filters: FilterValues) => {
     setActiveFilters(filters as HotelFilters)
-    console.log('Applied filters:', filters)
+    setCurrentPage(1)
   }
+
+  const filteredHotels = hotels.filter(hotel => {
+    if (activeFilters) {
+      // Búsqueda por nombre (coincidencia parcial)
+      if (activeFilters.name && !hotel.name.toLowerCase().includes(activeFilters.name.toLowerCase())) {
+        return false
+      }
+
+      // Búsqueda por país (coincidencia parcial)
+      if (activeFilters.country && !hotel.country.toLowerCase().includes(activeFilters.country.toLowerCase())) {
+        return false
+      }
+
+      // Búsqueda por ciudad (coincidencia parcial)
+      if (activeFilters.city && !hotel.city.toLowerCase().includes(activeFilters.city.toLowerCase())) {
+        return false
+      }
+
+      // Búsqueda por categoría (exacta)
+      if (activeFilters.category && hotel.category !== parseInt(activeFilters.category)) {
+        return false
+      }
+
+      // Búsqueda por rango de precios
+      if (activeFilters.priceMin && hotel.base_price < parseFloat(activeFilters.priceMin)) {
+        return false
+      }
+      if (activeFilters.priceMax && hotel.base_price > parseFloat(activeFilters.priceMax)) {
+        return false
+      }
+    }
+    return true
+  })
+
+  // Calcular paginación basada en los resultados filtrados
+  const totalPages = Math.ceil(filteredHotels.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedHotels = filteredHotels.slice(startIndex, endIndex)
 
   const handleEdit = (hotel: Hotel) => {
     setEditingHotel({
@@ -146,15 +184,11 @@ export default function ListHotelsPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 mb-4">
-            <SearchButton />
-          </div>
-
           {activeFilters && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-blue-800">Filtros Activos:</span>
+                  <span className="text-sm font-medium text-blue-800">Active Filters:</span>
                   {Object.entries(activeFilters).map(([key, value]) => 
                     value && (
                       <span key={key} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -167,7 +201,7 @@ export default function ListHotelsPage() {
                   onClick={() => setActiveFilters(null)}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Limpiar todo
+                  Clear all
                 </button>
               </div>
             </div>
@@ -180,6 +214,7 @@ export default function ListHotelsPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
@@ -207,8 +242,14 @@ export default function ListHotelsPage() {
                         No hotels available
                       </td>
                     </tr>
+                  ) : filteredHotels.length === 0 ? (
+                    <tr>
+                      <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
+                        No hotels match the selected filters
+                      </td>
+                    </tr>
                   ) : (
-                    hotels.map((hotel) => (
+                    paginatedHotels.map((hotel) => (
                       <tr key={hotel.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div 
@@ -221,6 +262,16 @@ export default function ListHotelsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900 line-clamp-2">{hotel.description}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <a 
+                            href={hotel.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-xs"
+                          >
+                            {hotel.website}
+                          </a>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{hotel.location}</div>
