@@ -1,85 +1,169 @@
 import React, { useState, useEffect } from 'react'
-import { Hotel } from '@/app/lib/features/hotels/hotelSlice'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchSeasons } from '@/app/lib/features/seasons/seasonSlice'
+import { fetchCancelPolicies, selectCancelPolicies, selectCancelPoliciesStatus } from '@/app/lib/features/cancelPolicies/cancelPolicySlice'
 
-interface Season {
+interface Hotel {
   id: number
   name: string
-  start_date: string
-  end_date: string
-  percentage: number
+  description: string
+  website: string
+  country: string
+  city: string
+  location: string
+  base_price: number
+  category: number
+  seasons: Array<{
+    id: number
+    name: string
+    description: string
+    start_date: string
+    end_date: string
+    percentage: number
+  }>
+  cancel_policies: Array<{
+    id: number
+    name: string
+    description: string
+    days: number
+    percentage: number
+  }>
 }
 
 interface EditHotelModalProps {
-  hotel: Hotel & { seasons?: number[] }
+  hotel: Hotel
   onClose: () => void
-  onSave: (hotel: Hotel & { seasons?: number[] }) => void
+  onSave: () => void
 }
 
 const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave }) => {
   const dispatch = useAppDispatch()
-  const seasons = useAppSelector((state) => state.seasons.items) as Season[]
+  const seasons = useAppSelector((state) => state.seasons.items)
   const seasonsStatus = useAppSelector((state) => state.seasons.status)
-  const [editedHotel, setEditedHotel] = useState<Hotel & { seasons?: number[] }>(hotel)
+  const cancelPolicies = useAppSelector(selectCancelPolicies)
+  const cancelPoliciesStatus = useAppSelector(selectCancelPoliciesStatus)
+
+  const [editedHotel, setEditedHotel] = useState<Hotel>({
+    ...hotel,
+    base_price: Number(hotel.base_price),
+    category: Number(hotel.category),
+    seasons: hotel.seasons || [],
+    cancel_policies: hotel.cancel_policies || []
+  })
 
   useEffect(() => {
     if (seasonsStatus === 'idle') {
       dispatch(fetchSeasons(1))
     }
-  }, [dispatch, seasonsStatus])
+    if (cancelPoliciesStatus === 'idle') {
+      dispatch(fetchCancelPolicies(1))
+    }
+  }, [dispatch, seasonsStatus, cancelPoliciesStatus])
+
+  useEffect(() => {
+    if (cancelPoliciesStatus === 'succeeded' && hotel.cancel_policies) {
+      const updatedPolicies = hotel.cancel_policies.map(policy => {
+        const fullPolicy = cancelPolicies.find(p => p.id === policy.id)
+        return fullPolicy || policy
+      })
+      setEditedHotel(prev => ({
+        ...prev,
+        cancel_policies: updatedPolicies
+      }))
+    }
+  }, [cancelPoliciesStatus, cancelPolicies, hotel.cancel_policies])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      console.log('Iniciando actualización del hotel:', editedHotel)
-      const response = await fetch(`/api/v1/hotel/${editedHotel.id}`, {
+      // Asegurarse de que las políticas sean números
+      const cancelPolicyIds = editedHotel.cancel_policies.map(p => Number(p.id))
+      
+      const payload = {
+        name: editedHotel.name,
+        description: editedHotel.description,
+        website: editedHotel.website,
+        country: editedHotel.country,
+        city: editedHotel.city,
+        location: editedHotel.location,
+        base_price: Number(editedHotel.base_price),
+        category: Number(editedHotel.category),
+        seasons: editedHotel.seasons.map(s => Number(s.id)),
+        cancelPolicies: cancelPolicyIds
+      }
+
+      console.log('Current hotel state:', editedHotel)
+      console.log('Sending payload:', payload)
+      console.log('Selected policies:', editedHotel.cancel_policies)
+      console.log('Policies to send:', payload.cancelPolicies)
+
+      const response = await fetch(`/api/v1/hotel/${hotel.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
         },
-        body: JSON.stringify({
-          ...editedHotel,
-          seasons: editedHotel.seasons?.map((season: number | { id: number }) => 
-            typeof season === 'object' ? season.id : season
-          ) || []
-        }),
+        body: JSON.stringify(payload),
       })
 
-      console.log('Respuesta recibida:', response.status)
-      
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Error al actualizar hotel:', errorData)
-        throw new Error(errorData.error || 'Failed to update hotel')
+        console.error('Error response:', errorData)
+        throw new Error(errorData.message || 'Failed to update hotel')
       }
 
-      const data = await response.json()
-      console.log('Hotel actualizado exitosamente:', data)
+      const responseData = await response.json()
+      console.log('Update successful:', responseData)
       
-      onSave(editedHotel)
-      onClose()
+      // Esperar un momento para asegurar que los cambios se persistan
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Llamar a onSave para recargar la página
+      onSave()
     } catch (error) {
       console.error('Error updating hotel:', error)
-      alert('Error al actualizar el hotel: ' + (error instanceof Error ? error.message : 'Error desconocido'))
+      alert('Error updating hotel: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
 
   const handleSeasonChange = (seasonId: number) => {
+    const season = seasons.find(s => s.id === seasonId)
+    if (!season) return
+
     setEditedHotel(prev => ({
       ...prev,
-      seasons: prev.seasons?.includes(seasonId)
-        ? prev.seasons.filter(id => id !== seasonId)
-        : [...(prev.seasons || []), seasonId]
+      seasons: prev.seasons.some(s => s.id === seasonId)
+        ? prev.seasons.filter(s => s.id !== seasonId)
+        : [...prev.seasons, season]
     }))
+  }
+
+  const handleCancelPolicyChange = (policyId: number) => {
+    const policy = cancelPolicies.find(p => p.id === policyId)
+    if (!policy) return
+
+    setEditedHotel(prev => {
+      const isSelected = prev.cancel_policies.some(p => p.id === policyId)
+      const newPolicies = isSelected
+        ? prev.cancel_policies.filter(p => p.id !== policyId)
+        : [...prev.cancel_policies, policy]
+      
+      console.log('Current policies:', prev.cancel_policies)
+      console.log('Policy to add/remove:', policy)
+      console.log('New policies array:', newPolicies)
+      
+      return {
+        ...prev,
+        cancel_policies: newPolicies
+      }
+    })
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Editar Hotel</h2>
+        <h2 className="text-2xl font-bold mb-4">Edit Hotel</h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -155,79 +239,85 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
               rows={4}
             />
           </div>
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Temporadas</label>
-            
-            {/* Temporadas seleccionadas */}
-            {editedHotel.seasons && editedHotel.seasons.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Temporadas seleccionadas:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {seasons
-                    .filter(season => editedHotel.seasons?.includes(season.id))
-                    .map(season => (
-                      <div 
-                        key={season.id} 
-                        className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-blue-900">{season.name}</div>
-                          <div className="text-xs text-blue-700">
-                            {new Date(season.start_date).toLocaleDateString()} - {new Date(season.end_date).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-blue-700">Porcentaje: {season.percentage}%</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleSeasonChange(season.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
 
-            {/* Lista de temporadas disponibles */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Seasons</label>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {seasonsStatus === 'loading' ? (
-                <div className="text-gray-500">Cargando temporadas...</div>
+                <div className="text-gray-500">Loading seasons...</div>
               ) : seasonsStatus === 'failed' ? (
-                <div className="text-red-500">Error al cargar temporadas</div>
+                <div className="text-red-500">Error loading seasons</div>
               ) : (
-                seasons.map((season) => {
-                  const isSelected = editedHotel.seasons?.includes(season.id)
-                  return (
-                    <div 
-                      key={season.id} 
-                      className={`flex items-center p-4 border rounded-lg ${
-                        isSelected ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        id={`season-${season.id}`}
-                        checked={isSelected}
-                        onChange={() => handleSeasonChange(season.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor={`season-${season.id}`} className="ml-3 flex-1">
+                seasons.map((season) => (
+                  <div 
+                    key={season.id} 
+                    className={`flex items-center p-4 border rounded-lg transition-colors duration-200 ${
+                      editedHotel.seasons.some(s => s.id === season.id)
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      id={`season-${season.id}`}
+                      checked={editedHotel.seasons.some(s => s.id === season.id)}
+                      onChange={() => handleSeasonChange(season.id)}
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label htmlFor={`season-${season.id}`} className="ml-3 flex-1 cursor-pointer">
+                      <div className="flex items-center justify-between">
                         <div className="text-sm font-medium text-gray-900">{season.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(season.start_date).toLocaleDateString()} - {new Date(season.end_date).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-gray-500">Porcentaje: {season.percentage}%</div>
-                      </label>
-                    </div>
-                  )
-                })
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(season.start_date).toLocaleDateString()} - {new Date(season.end_date).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-gray-500">Percentage: {season.percentage}%</div>
+                    </label>
+                  </div>
+                ))
               )}
             </div>
           </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cancellation Policies</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cancelPoliciesStatus === 'loading' ? (
+                <div className="text-gray-500">Loading policies...</div>
+              ) : cancelPoliciesStatus === 'failed' ? (
+                <div className="text-red-500">Error loading policies</div>
+              ) : (
+                cancelPolicies.map((policy) => (
+                  <div 
+                    key={policy.id} 
+                    className={`flex items-center p-4 border rounded-lg transition-colors duration-200 ${
+                      editedHotel.cancel_policies.some(p => p.id === policy.id)
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      id={`policy-${policy.id}`}
+                      checked={editedHotel.cancel_policies.some(p => p.id === policy.id)}
+                      onChange={() => handleCancelPolicyChange(policy.id)}
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label htmlFor={`policy-${policy.id}`} className="ml-3 flex-1 cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-medium text-gray-900">{policy.name}</div>
+                      </div>
+                      <div className="text-xs text-gray-500">{policy.description}</div>
+                      <div className="text-xs text-gray-500">
+                        Days: {policy.days} | Percentage: {policy.percentage}%
+                      </div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           <div className="mt-6 flex justify-end gap-2">
             <button
               type="button"

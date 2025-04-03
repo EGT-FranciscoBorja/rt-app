@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { FaArrowLeft } from "react-icons/fa"
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchSeasons } from '@/app/lib/features/seasons/seasonSlice'
+import { fetchCancelPolicies, selectCancelPolicies, selectCancelPoliciesStatus } from '@/app/lib/features/cancelPolicies/cancelPolicySlice'
 
 interface HotelFormData {
   name: string
@@ -16,6 +17,7 @@ interface HotelFormData {
   base_price: string
   category: string
   seasons: number[]
+  cancel_policies: number[]
 }
 
 export default function NewHotelPage() {
@@ -23,6 +25,8 @@ export default function NewHotelPage() {
   const dispatch = useAppDispatch()
   const seasons = useAppSelector((state) => state.seasons.items)
   const seasonsStatus = useAppSelector((state) => state.seasons.status)
+  const cancelPolicies = useAppSelector(selectCancelPolicies)
+  const cancelPoliciesStatus = useAppSelector(selectCancelPoliciesStatus)
 
   const [formData, setFormData] = useState<HotelFormData>({
     name: '',
@@ -33,14 +37,18 @@ export default function NewHotelPage() {
     location: '',
     base_price: '',
     category: '',
-    seasons: []
+    seasons: [],
+    cancel_policies: []
   })
 
   useEffect(() => {
     if (seasonsStatus === 'idle') {
       dispatch(fetchSeasons(1))
     }
-  }, [dispatch, seasonsStatus])
+    if (cancelPoliciesStatus === 'idle') {
+      dispatch(fetchCancelPolicies(1))
+    }
+  }, [dispatch, seasonsStatus, cancelPoliciesStatus])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -59,29 +67,43 @@ export default function NewHotelPage() {
     }))
   }
 
+  const handleCancelPolicyChange = (policyId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      cancel_policies: prev.cancel_policies.includes(policyId)
+        ? prev.cancel_policies.filter(id => id !== policyId)
+        : [...prev.cancel_policies, policyId]
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch('/api/hotels', {
+      const response = await fetch('/api/v1/hotel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
         },
         body: JSON.stringify({
           ...formData,
           base_price: parseFloat(formData.base_price),
           category: parseInt(formData.category),
-          seasons: formData.seasons
+          seasons: formData.seasons,
+          cancel_policies: formData.cancel_policies
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create hotel')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create hotel')
       }
 
       router.push('/listHotels')
     } catch (error) {
       console.error('Error creating hotel:', error)
+      alert('Error creating hotel: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
 
@@ -223,6 +245,36 @@ export default function NewHotelPage() {
                         {new Date(season.start_date).toLocaleDateString()} - {new Date(season.end_date).toLocaleDateString()}
                       </div>
                       <div className="text-xs text-gray-500">Percentage: {season.percentage}%</div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cancellation Policies</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cancelPoliciesStatus === 'loading' ? (
+                <div className="text-gray-500">Loading policies...</div>
+              ) : cancelPoliciesStatus === 'failed' ? (
+                <div className="text-red-500">Error loading policies</div>
+              ) : (
+                cancelPolicies.map((policy) => (
+                  <div key={policy.id} className="flex items-center p-4 border rounded-lg">
+                    <input
+                      type="checkbox"
+                      id={`policy-${policy.id}`}
+                      checked={formData.cancel_policies.includes(policy.id)}
+                      onChange={() => handleCancelPolicyChange(policy.id)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`policy-${policy.id}`} className="ml-3">
+                      <div className="text-sm font-medium text-gray-900">{policy.name}</div>
+                      <div className="text-xs text-gray-500">{policy.description}</div>
+                      <div className="text-xs text-gray-500">
+                        Days: {policy.days} | Percentage: {policy.percentage}%
+                      </div>
                     </label>
                   </div>
                 ))

@@ -12,6 +12,8 @@ import hotelRoomsReducer from './features/hotelRooms/hotelRoomsSlice'
 import authReducer from './features/auth/authSlice'
 import seasonsReducer from './features/seasons/seasonSlice'
 import adviceReducer, { AdviceState } from './features/advices/adviceSlice'
+import cancelPolicyReducer from './features/cancelPolicies/cancelPolicySlice'
+import type { CancelPolicyState } from './features/cancelPolicies/cancelPolicySlice'
 
 // Habilitar el plugin MapSet de Immer
 enableMapSet()
@@ -208,6 +210,7 @@ export interface RootState {
   auth: AuthState
   seasons: SeasonState
   advice: AdviceState
+  cancelPolicies: CancelPolicyState
 }
 
 export const store = configureStore({
@@ -223,7 +226,8 @@ export const store = configureStore({
     hotelRooms: hotelRoomsReducer,
     auth: authReducer,
     seasons: seasonsReducer,
-    advice: adviceReducer
+    advice: adviceReducer,
+    cancelPolicies: cancelPolicyReducer
   },
 })
 

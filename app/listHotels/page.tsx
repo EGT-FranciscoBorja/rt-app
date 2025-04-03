@@ -169,19 +169,19 @@ export default function ListHotelsPage() {
                   {status === 'loading' ? (
                     <tr>
                       <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
-                        Cargando hoteles...
+                        Loading hotels...
                       </td>
                     </tr>
                   ) : status === 'failed' ? (
                     <tr>
                       <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-red-500">
-                        Error al cargar hoteles
+                        Error loading hotels
                       </td>
                     </tr>
                   ) : !Array.isArray(hotels) || hotels.length === 0 ? (
                     <tr>
                       <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
-                        No hay hoteles disponibles
+                        No hotels available
                       </td>
                     </tr>
                   ) : (
