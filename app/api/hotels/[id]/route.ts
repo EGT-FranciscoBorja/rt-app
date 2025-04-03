@@ -8,20 +8,11 @@ type RouteContext = {
 
 export async function PUT(
   request: Request,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: hotelId } = await context.params
-    console.log('=== Inicio de la petición PUT ===')
-    console.log('Hotel ID recibido:', hotelId)
-    console.log('URL de la petición:', request.url)
-    
     const body = await request.json()
-    console.log('Cuerpo de la petición:', body)
-    
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel/${hotelId}`
-    console.log('URL de la API real:', apiUrl)
-    console.log('Token de la API:', process.env.NEXT_PUBLIC_API_TOKEN)
+    console.log('Received body:', body) // Para debugging
 
     const formattedBody = {
       name: body.name,
@@ -30,55 +21,35 @@ export async function PUT(
       country: body.country,
       city: body.city,
       location: body.location,
-      base_price: body.base_price,
-      category: body.category,
-      seasons: body.seasons || [],
-      cancelPolicies: body.cancelPolicies || []
+      base_price: Number(body.base_price),
+      category: Number(body.category),
+      seasons: Array.isArray(body.seasons) ? body.seasons : [],
+      cancel_policies: Array.isArray(body.cancel_policies) ? body.cancel_policies : []
     }
 
-    console.log('Cuerpo formateado para la API:', formattedBody)
+    console.log('Formatted body:', formattedBody) // Para debugging
 
-    const headers = {
-      'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    }
-    console.log('Headers de la petición:', headers)
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel/${params.id}`, {
       method: 'PUT',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+      },
       body: JSON.stringify(formattedBody),
-      cache: 'no-store'
     })
 
-    console.log('Estado de la respuesta de la API:', response.status)
-    
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Error de la API:', errorText)
-      return NextResponse.json(
-        { 
-          error: 'Failed to update hotel',
-          status: response.status,
-          message: errorText
-        }, 
-        { status: response.status }
-      )
+      const error = await response.json()
+      console.error('API Error:', error) // Para debugging
+      return NextResponse.json({ error: error.message }, { status: response.status })
     }
 
     const data = await response.json()
-    console.log('Respuesta exitosa de la API:', data)
-    console.log('=== Fin de la petición PUT ===')
-
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error en el manejador PUT:', error)
+    console.error('Error updating hotel:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to update hotel',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
+      { error: 'Error updating hotel' },
       { status: 500 }
     )
   }
@@ -111,7 +82,7 @@ export async function GET(
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error en GET /api/hotels/[id]:', error)
+    console.error('Error en GET /api/v1/hotel/[id]:', error)
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

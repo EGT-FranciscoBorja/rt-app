@@ -65,7 +65,7 @@ export default function EditHotelPageContent({ hotelId }: EditHotelPageProps) {
   useEffect(() => {
     const fetchHotel = async () => {
       try {
-        const response = await fetch(`/api/hotels/${hotelId}`)
+        const response = await fetch(`/api/v1/hotel/${hotelId}`)
         if (!response.ok) {
           throw new Error('Failed to fetch hotel')
         }
