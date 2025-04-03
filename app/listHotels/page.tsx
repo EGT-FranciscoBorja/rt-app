@@ -132,7 +132,7 @@ export default function ListHotelsPage() {
 
   const handleDelete = async (hotelId: number) => {
     try {
-      const response = await fetch(`/api/hotels/${hotelId}`, {
+      const response = await fetch(`/api/v1/hotel/${hotelId}`, {
         method: 'DELETE',
       })
 
@@ -294,11 +294,7 @@ export default function ListHotelsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleEdit({
-                                  ...hotel,
-                                  seasons: [],
-                                  cancel_policies: []
-                                })}
+                                onClick={() => handleEdit(hotel)}
                                 className="text-blue-600 hover:text-blue-900"
                               >
                                 <FaRegEdit className="text-lg" />

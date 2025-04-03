@@ -33,7 +33,18 @@ interface Hotel {
 interface EditHotelModalProps {
   hotel: Hotel
   onClose: () => void
-  onSave: () => void
+  onSave: (id: number, payload: {
+    name: string
+    description: string
+    website: string
+    country: string
+    city: string
+    location: string
+    base_price: number
+    category: number
+    seasons: number[]
+    cancel_policies: number[]
+  }) => void
 }
 
 const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave }) => {
@@ -61,6 +72,19 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
   }, [dispatch, seasonsStatus, cancelPoliciesStatus])
 
   useEffect(() => {
+    if (seasonsStatus === 'succeeded' && hotel.seasons) {
+      const updatedSeasons = hotel.seasons.map(season => {
+        const fullSeason = seasons.find(s => s.id === season.id)
+        return fullSeason || season
+      })
+      setEditedHotel(prev => ({
+        ...prev,
+        seasons: updatedSeasons
+      }))
+    }
+  }, [seasonsStatus, seasons, hotel.seasons])
+
+  useEffect(() => {
     if (cancelPoliciesStatus === 'succeeded' && hotel.cancel_policies) {
       const updatedPolicies = hotel.cancel_policies.map(policy => {
         const fullPolicy = cancelPolicies.find(p => p.id === policy.id)
@@ -76,9 +100,8 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Asegurarse de que las políticas sean números
+      const seasonIds = editedHotel.seasons.map(s => Number(s.id))
       const cancelPolicyIds = editedHotel.cancel_policies.map(p => Number(p.id))
-      
       const payload = {
         name: editedHotel.name,
         description: editedHotel.description,
@@ -86,44 +109,15 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
         country: editedHotel.country,
         city: editedHotel.city,
         location: editedHotel.location,
-        base_price: Number(editedHotel.base_price),
-        category: Number(editedHotel.category),
-        seasons: editedHotel.seasons.map(s => Number(s.id)),
-        cancelPolicies: cancelPolicyIds
+        base_price: editedHotel.base_price,
+        category: editedHotel.category,
+        seasons: seasonIds,
+        cancel_policies: cancelPolicyIds
       }
-
-      console.log('Current hotel state:', editedHotel)
-      console.log('Sending payload:', payload)
-      console.log('Selected policies:', editedHotel.cancel_policies)
-      console.log('Policies to send:', payload.cancelPolicies)
-
-      const response = await fetch(`/api/v1/hotel/${hotel.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Error response:', errorData)
-        throw new Error(errorData.message || 'Failed to update hotel')
-      }
-
-      const responseData = await response.json()
-      console.log('Update successful:', responseData)
-      
-      // Esperar un momento para asegurar que los cambios se persistan
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Llamar a onSave para recargar la página
-      onSave()
+      await onSave(hotel.id, payload)
+      onClose()
     } catch (error) {
-      console.error('Error updating hotel:', error)
-      alert('Error updating hotel: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Error al guardar el hotel:', error)
     }
   }
 
@@ -149,15 +143,19 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
         ? prev.cancel_policies.filter(p => p.id !== policyId)
         : [...prev.cancel_policies, policy]
       
-      console.log('Current policies:', prev.cancel_policies)
-      console.log('Policy to add/remove:', policy)
-      console.log('New policies array:', newPolicies)
-      
       return {
         ...prev,
         cancel_policies: newPolicies
       }
     })
+  }
+
+  const isSeasonSelected = (seasonId: number) => {
+    return editedHotel.seasons.some(s => s.id === seasonId)
+  }
+
+  const isPolicySelected = (policyId: number) => {
+    return editedHotel.cancel_policies.some(p => p.id === policyId)
   }
 
   return (
@@ -252,7 +250,7 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
                   <div 
                     key={season.id} 
                     className={`flex items-center p-4 border rounded-lg transition-colors duration-200 ${
-                      editedHotel.seasons.some(s => s.id === season.id)
+                      isSeasonSelected(season.id)
                         ? 'bg-blue-50 border-blue-200'
                         : 'bg-white border-gray-200'
                     }`}
@@ -260,7 +258,7 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
                     <input
                       type="checkbox"
                       id={`season-${season.id}`}
-                      checked={editedHotel.seasons.some(s => s.id === season.id)}
+                      checked={isSeasonSelected(season.id)}
                       onChange={() => handleSeasonChange(season.id)}
                       className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                     />
@@ -291,7 +289,7 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
                   <div 
                     key={policy.id} 
                     className={`flex items-center p-4 border rounded-lg transition-colors duration-200 ${
-                      editedHotel.cancel_policies.some(p => p.id === policy.id)
+                      isPolicySelected(policy.id)
                         ? 'bg-blue-50 border-blue-200'
                         : 'bg-white border-gray-200'
                     }`}
@@ -299,7 +297,7 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
                     <input
                       type="checkbox"
                       id={`policy-${policy.id}`}
-                      checked={editedHotel.cancel_policies.some(p => p.id === policy.id)}
+                      checked={isPolicySelected(policy.id)}
                       onChange={() => handleCancelPolicyChange(policy.id)}
                       className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                     />

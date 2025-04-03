@@ -5,9 +5,9 @@ export const handleEdit = (hotel: Hotel) => {
   console.log('Edit hotel:', hotel)
 }
 
-export const handleDelete = async (hotelId: number) => {
+export async function deleteHotel(hotelId: number) {
   try {
-    const response = await fetch(`/api/hotels/${hotelId}`, {
+    const response = await fetch(`/api/v1/hotel/${hotelId}`, {
       method: 'DELETE',
     })
 

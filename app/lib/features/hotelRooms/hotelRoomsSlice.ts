@@ -84,12 +84,12 @@ export const createHotelRoom = createAsyncThunk(
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Error al crear la habitación')
+        throw new Error(errorData.message || 'Failed to create room')
       }
 
       const result = await response.json()
       if (!result.success) {
-        throw new Error(result.message || 'Error al crear la habitación')
+        throw new Error(result.message || 'Failed to create room')
       }
 
       return result.data
@@ -104,22 +104,23 @@ export const updateHotelRoom = createAsyncThunk(
   'hotelRooms/updateHotelRoom',
   async ({ hotelId, roomId, roomData }: { hotelId: number, roomId: number, roomData: Partial<HotelRoom> }) => {
     try {
-      const response = await fetch(`/api/hotels/${hotelId}/rooms/${roomId}`, {
+      const response = await fetch(`/api/v1/hotel/${hotelId}/roomType/${roomId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
         },
         body: JSON.stringify(roomData),
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Error al actualizar la habitación')
+        throw new Error(errorData.message || 'Failed to update room')
       }
 
       const result = await response.json()
       if (!result.success) {
-        throw new Error(result.message || 'Error al actualizar la habitación')
+        throw new Error(result.message || 'Failed to update room')
       }
 
       return result.data
@@ -134,18 +135,21 @@ export const deleteHotelRoom = createAsyncThunk(
   'hotelRooms/deleteHotelRoom',
   async ({ hotelId, roomId }: { hotelId: number, roomId: number }) => {
     try {
-      const response = await fetch(`/api/hotels/${hotelId}/rooms/${roomId}`, {
+      const response = await fetch(`/api/v1/hotel/${hotelId}/roomType/${roomId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Error al eliminar la habitación')
+        throw new Error(errorData.message || 'Failed to delete room')
       }
 
       const result = await response.json()
       if (!result.success) {
-        throw new Error(result.message || 'Error al eliminar la habitación')
+        throw new Error(result.message || 'Failed to delete room')
       }
 
       return roomId
