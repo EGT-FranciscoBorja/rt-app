@@ -7,6 +7,7 @@ export interface RoomType {
   description: string;
   quantity: number;
   price: number;
+  original_price: number;
   available_quantity: number;
 }
 
@@ -23,6 +24,13 @@ export interface Hotel {
   created_at: string;
   updated_at: string;
   room_types: RoomType[];
+  seasons: {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+    percentage: number;
+  }[];
 }
 
 export interface PaginationLink {

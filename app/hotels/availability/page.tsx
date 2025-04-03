@@ -290,8 +290,7 @@ export default function HotelAvailability() {
             <p className="text-gray-600">Loading available hotels...</p>
           </div>
         ) : (
-          <>
-            {console.log('Current searchResults:', searchResults)}
+          <div>
             {searchResults.length > 0 ? (
               <div className="space-y-6">
                 {searchResults.map((hotel) => (
@@ -312,6 +311,25 @@ export default function HotelAvailability() {
                     </div>
                     
                     <div className="p-6">
+                      {hotel.seasons && hotel.seasons.length > 0 && (
+                        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-blue-800">
+                                {hotel.seasons[0].name}
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">
+                                Valid from {new Date(hotel.seasons[0].start_date).toLocaleDateString()} to {new Date(hotel.seasons[0].end_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-blue-800">
+                                {hotel.seasons[0].percentage}% OFF
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
@@ -332,6 +350,11 @@ export default function HotelAvailability() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                                   ${room.price.toLocaleString()}
+                                  {room.original_price && room.original_price !== room.price && (
+                                    <span className="ml-2 text-sm text-red-500 line-through">
+                                      (${room.original_price.toLocaleString()})
+                                    </span>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -418,7 +441,7 @@ export default function HotelAvailability() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
