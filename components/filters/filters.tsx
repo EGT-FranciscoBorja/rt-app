@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
-import { MdEmail, MdPhone, MdLanguage } from "react-icons/md";
 import { BsCurrencyDollar } from "react-icons/bs";
-import { AiFillStar } from "react-icons/ai";
 
 interface FilterValues {
   name: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  phone: string;
-  email: string;
-  website: string;
+  description: string;
+  location: string;
   priceMin: string;
   priceMax: string;
-  rating: string;
+  category: string;
 }
 
 interface FiltersProps {
@@ -27,16 +20,11 @@ function Filters({ onApplyFilters }: FiltersProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({
     name: '',
-    address: '',
-    city: '',
-    state: '',
-    country: '',
-    phone: '',
-    email: '',
-    website: '',
+    description: '',
+    location: '',
     priceMin: '',
     priceMax: '',
-    rating: '0'
+    category: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,16 +42,11 @@ function Filters({ onApplyFilters }: FiltersProps) {
   const handleClear = () => {
     setFilters({
       name: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
-      phone: '',
-      email: '',
-      website: '',
+      description: '',
+      location: '',
       priceMin: '',
       priceMax: '',
-      rating: '0'
+      category: ''
     });
   };
 
@@ -83,7 +66,7 @@ function Filters({ onApplyFilters }: FiltersProps) {
         <div className="space-y-6">
           {/* Name Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input
               type="text"
               name="name"
@@ -94,89 +77,38 @@ function Filters({ onApplyFilters }: FiltersProps) {
             />
           </div>
 
-          {/* Location Filters */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Location</label>
+          {/* Description Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <input
+              type="text"
+              name="description"
+              value={filters.description}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter description"
+            />
+          </div>
+
+          {/* Location Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
             <div className="flex items-center gap-2">
               <IoLocationOutline className="text-gray-400" />
               <input
                 type="text"
-                name="address"
-                value={filters.address}
+                name="location"
+                value={filters.location}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Address"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="text"
-                name="city"
-                value={filters.city}
-                onChange={handleChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="City"
-              />
-              <input
-                type="text"
-                name="state"
-                value={filters.state}
-                onChange={handleChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="State"
-              />
-              <input
-                type="text"
-                name="country"
-                value={filters.country}
-                onChange={handleChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Country"
-              />
-            </div>
-          </div>
-
-          {/* Contact Filters */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Contact Information</label>
-            <div className="flex items-center gap-2">
-              <MdPhone className="text-gray-400" />
-              <input
-                type="text"
-                name="phone"
-                value={filters.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Phone number"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <MdEmail className="text-gray-400" />
-              <input
-                type="email"
-                name="email"
-                value={filters.email}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Email"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <MdLanguage className="text-gray-400" />
-              <input
-                type="text"
-                name="website"
-                value={filters.website}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Website"
+                placeholder="Enter location"
               />
             </div>
           </div>
 
           {/* Price Range */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Price Range</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
             <div className="flex items-center gap-2">
               <BsCurrencyDollar className="text-gray-400" />
               <div className="flex gap-2 w-full">
@@ -200,27 +132,17 @@ function Filters({ onApplyFilters }: FiltersProps) {
             </div>
           </div>
 
-          {/* Rating Filter */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Minimum Rating</label>
-            <div className="flex items-center gap-2">
-              <AiFillStar className="text-yellow-400" />
-              <input
-                type="range"
-                name="rating"
-                value={filters.rating}
-                onChange={handleChange}
-                min="0"
-                max="5"
-                step="0.1"
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-sm font-medium text-gray-700">{filters.rating}</span>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>0</span>
-              <span>5</span>
-            </div>
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <input
+              type="text"
+              name="category"
+              value={filters.category}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter category"
+            />
           </div>
 
           <div className="flex gap-2 pt-4">

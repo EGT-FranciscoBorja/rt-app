@@ -17,6 +17,7 @@ import {
 } from '@/app/lib/features/hotelRooms/hotelRoomsSlice'
 import HotelRoomFilters from '@/components/filters/HotelRoomFilters'
 import HotelRoomForm, { HotelRoomFormData } from '@/components/HotelRoomForm'
+import HotelSeasons from '@/components/HotelSeasons'
 
 interface HotelRoom {
   id: number
@@ -28,6 +29,37 @@ interface HotelRoom {
   maximum_persons: number
   created_at: string
   updated_at: string
+}
+
+interface CancelPolicy {
+  id: number
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+interface HotelData {
+  id: number
+  name: string
+  description: string
+  website: string
+  country: string
+  city: string
+  location: string
+  base_price: number
+  category: number
+  seasons: Array<{
+    id: number
+    name: string
+    description: string
+    start_date: string
+    end_date: string
+    percentage: number
+    created_at: string
+    updated_at: string
+  }>
+  cancel_policies: CancelPolicy[]
 }
 
 interface HotelRoomFilters {
@@ -48,12 +80,35 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
   const [showFilters, setShowFilters] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingRoom, setEditingRoom] = useState<HotelRoom | null>(null)
+  const [hotelData, setHotelData] = useState<HotelData | null>(null)
   const [filters, setFilters] = useState<HotelRoomFilters>({
     name: '',
     priceMin: '',
     priceMax: '',
     capacity: ''
   })
+
+  useEffect(() => {
+    const fetchHotelData = async () => {
+      try {
+        const response = await fetch(`/api/v1/hotel/${hotelId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+          },
+        })
+        if (!response.ok) throw new Error('Failed to fetch hotel data')
+        const data = await response.json()
+        setHotelData(data.data)
+      } catch (error) {
+        console.error('Error fetching hotel data:', error)
+      }
+    }
+
+    fetchHotelData()
+  }, [hotelId])
 
   useEffect(() => {
     if (status === 'idle') {
@@ -129,7 +184,7 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
 
   return (
     <div className="flex gap-6 p-6 max-w-[2000px] mx-auto">
-      <div className={`${showFilters ? 'w-64' : 'w-12'} bg-white p-4 rounded-lg shadow-md transition-all duration-300 relative`}>
+      <div className={`${showFilters ? 'w-64' : 'w-12'} bg-white rounded-lg shadow-md transition-all duration-300 relative h-fit`}>
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="absolute -right-3 top-4 bg-white rounded-full p-1 shadow-md hover:bg-gray-50"
@@ -138,7 +193,9 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
         </button>
 
         {showFilters && (
-          <HotelRoomFilters filters={filters} onFilterChange={handleFilterChange} />
+          <div className="p-4">
+            <HotelRoomFilters filters={filters} onFilterChange={handleFilterChange} />
+          </div>
         )}
       </div>
       <div className="flex-1">
@@ -150,7 +207,9 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
             >
               <FaArrowLeft className="text-2xl" />
             </button>
-            <h1 className="text-3xl font-bold text-gray-800">Hotel Rooms</h1>
+            <h1 className="text-3xl font-bold text-gray-800">
+              {hotelData?.name || 'Hotel Rooms'}
+            </h1>
           </div>
           {canEdit && (
             <div className="flex gap-3">
@@ -261,6 +320,8 @@ export default function HotelRoomsClient({ hotelId }: { hotelId: string }) {
             </tbody>
           </table>
         </div>
+
+        {hotelData && <HotelSeasons seasons={hotelData.seasons} />}
       </div>
     </div>
   )
