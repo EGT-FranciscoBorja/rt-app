@@ -6,8 +6,6 @@ import { fetchCabins, selectCabins, selectCabinsStatus } from '@/app/lib/feature
 import { FaArrowLeft } from "react-icons/fa"
 import { useRouter } from 'next/navigation'
 import { usePermissions } from '@/app/hooks/usePermissions'
-import { FaRegEdit } from 'react-icons/fa'
-import { RiDeleteBin6Line } from 'react-icons/ri'
 
 interface Cabin {
   id: number
@@ -59,9 +57,6 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                {canEdit && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -107,24 +102,6 @@ function CabinsList({ cruiseId }: CabinsListProps) {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {cabin.updated_at ? new Date(cabin.updated_at).toLocaleDateString() : '-'}
                       </td>
-                      {canEdit && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {/* TODO: Implementar edición */}}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <FaRegEdit className="text-lg" />
-                            </button>
-                            <button
-                              onClick={() => {/* TODO: Implementar eliminación */}}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <RiDeleteBin6Line className="text-lg" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
                     </tr>
                   )
                 })
