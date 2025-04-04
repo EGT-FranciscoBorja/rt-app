@@ -32,7 +32,7 @@ function HotelRoomForm({ initialData, onSubmit, onCancel }: HotelRoomFormProps) 
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'description' ? value : Number(value)
+      [name]: ['quantity', 'base_price', 'maximum_persons'].includes(name) ? Number(value) : value
     }))
   }
 

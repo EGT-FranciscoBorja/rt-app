@@ -145,6 +145,25 @@ interface HotelState {
     category: number
     created_at: string
     updated_at: string
+    seasons?: Array<{
+      id: number
+      name: string
+      description: string
+      start_date: string
+      end_date: string
+      percentage: number
+      created_at: string
+      updated_at: string
+    }>
+    cancel_policies?: Array<{
+      id: number
+      name: string
+      description: string
+      days: number
+      percentage: number
+      created_at: string
+      updated_at: string
+    }>
   }>
   status: 'idle' | 'loading' | 'succeeded' | 'failed'
   currentPage: number

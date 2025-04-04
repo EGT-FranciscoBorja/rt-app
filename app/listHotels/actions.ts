@@ -1,11 +1,11 @@
-import { Hotel } from '@/app/lib/features/hotels/hotelSlice'
+import { Hotel } from '@/app/lib/types/hotel'
 
 export const handleEdit = (hotel: Hotel) => {
   // TODO: Implementar lógica de edición
-  console.log('Edit hotel:', hotel)
+  console.log('Editing hotel:', hotel)
 }
 
-export async function deleteHotel(hotelId: number) {
+export const handleDelete = async (hotelId: number) => {
   try {
     const response = await fetch(`/api/v1/hotel/${hotelId}`, {
       method: 'DELETE',

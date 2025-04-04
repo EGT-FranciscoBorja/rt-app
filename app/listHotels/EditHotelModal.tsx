@@ -2,33 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import { fetchSeasons } from '@/app/lib/features/seasons/seasonSlice'
 import { fetchCancelPolicies, selectCancelPolicies, selectCancelPoliciesStatus } from '@/app/lib/features/cancelPolicies/cancelPolicySlice'
-
-interface Hotel {
-  id: number
-  name: string
-  description: string
-  website: string
-  country: string
-  city: string
-  location: string
-  base_price: number
-  category: number
-  seasons: Array<{
-    id: number
-    name: string
-    description: string
-    start_date: string
-    end_date: string
-    percentage: number
-  }>
-  cancel_policies: Array<{
-    id: number
-    name: string
-    description: string
-    days: number
-    percentage: number
-  }>
-}
+import { Hotel } from '@/app/lib/types/hotel'
 
 interface EditHotelModalProps {
   hotel: Hotel

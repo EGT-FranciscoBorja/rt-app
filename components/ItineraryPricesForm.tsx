@@ -22,6 +22,7 @@ export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPri
   const dispatch = useAppDispatch()
   const [editingPrices, setEditingPrices] = useState<Price[]>(prices)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Actualizar editingPrices cuando cambian los precios prop
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPri
   }
 
   const handleSave = async () => {
-    if (!editingId) return
+    if (!editingId || isSaving) return
 
     const priceToUpdate = editingPrices.find(p => p.id === editingId)
     if (!priceToUpdate) {
@@ -59,6 +60,7 @@ export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPri
       return
     }
 
+    setIsSaving(true)
     try {
       // Asegurarse de que el precio sea un número
       const numericPrice = Number(priceToUpdate.price)
@@ -102,6 +104,8 @@ export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPri
       
       // Revertir el cambio en caso de error
       setEditingPrices(prices)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -148,9 +152,14 @@ export default function ItineraryPricesForm({ itineraryId, cabins, prices, onPri
                       <button
                         type="button"
                         onClick={handleSave}
-                        className="text-green-600 hover:text-green-900"
+                        disabled={isSaving}
+                        className={`${
+                          isSaving 
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-green-600 hover:text-green-900'
+                        }`}
                       >
-                        Save
+                        {isSaving ? 'Saving...' : 'Save'}
                       </button>
                     ) : (
                       <button

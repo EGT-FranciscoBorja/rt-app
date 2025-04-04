@@ -84,7 +84,6 @@ export const updatePrice = createAsyncThunk(
       throw new Error('An original price was not found')
     }
 
-    // Obtener el cruiseId del itinerario
     const itinerary = state.itineraries.items.find(
       (it: Itinerary) => it.id === originalPrice.cruise_itinerary_id
     )
@@ -94,12 +93,6 @@ export const updatePrice = createAsyncThunk(
     }
 
     try {
-      console.log('Actualizando precio:', {
-        url: `/api/v1/cruise/${itinerary.cruise_id}/itinerary/${originalPrice.cruise_itinerary_id}/price/${priceId}`,
-        price: numericPrice,
-        cruise_cabin_id: originalPrice.cruise_cabin_id
-      })
-
       const response = await axios.put(
         `/api/v1/cruise/${itinerary.cruise_id}/itinerary/${originalPrice.cruise_itinerary_id}/price/${priceId}`,
         { 
@@ -108,12 +101,16 @@ export const updatePrice = createAsyncThunk(
         },
         {
           headers: {
-            'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`
           }
         }
       )
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Error al actualizar el precio')
+      }
 
       return response.data.data
     } catch (error) {

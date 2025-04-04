@@ -9,6 +9,7 @@ import { RiDeleteBin6Line } from "react-icons/ri"
 import Filters from '@/components/filters/filters'
 import { useRouter } from 'next/navigation'
 import EditHotelModal from './EditHotelModal'
+import { Hotel } from '@/app/lib/types/hotel'
 
 interface HotelFilters {
   name: string
@@ -26,39 +27,6 @@ interface FilterValues {
   category?: string
   priceMin?: string
   priceMax?: string
-}
-
-interface Hotel {
-  id: number
-  name: string
-  description: string
-  website: string
-  country: string
-  city: string
-  location: string
-  base_price: number
-  category: number
-  created_at: string
-  updated_at: string
-  seasons: Array<{
-    id: number
-    name: string
-    description: string
-    start_date: string
-    end_date: string
-    percentage: number
-    created_at: string
-    updated_at: string
-  }>
-  cancel_policies: Array<{
-    id: number
-    name: string
-    description: string
-    days: number
-    percentage: number
-    created_at: string
-    updated_at: string
-  }>
 }
 
 export default function ListHotelsPage() {
@@ -125,13 +93,21 @@ export default function ListHotelsPage() {
       }
     }
     return true
-  })
+  }).map(hotel => ({
+    ...hotel,
+    seasons: hotel.seasons || [],
+    cancel_policies: hotel.cancel_policies || []
+  }))
 
   // Calcular paginación basada en los resultados filtrados
   const totalPages = Math.ceil(filteredHotels.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const paginatedHotels = filteredHotels.slice(startIndex, endIndex)
+  const paginatedHotels = filteredHotels.slice(startIndex, endIndex).map(hotel => ({
+    ...hotel,
+    seasons: hotel.seasons || [],
+    cancel_policies: hotel.cancel_policies || []
+  }))
 
   const handleEdit = (hotel: Hotel) => {
     setEditingHotel({
