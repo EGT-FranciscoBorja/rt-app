@@ -1,10 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server'
 
+interface RouteParams {
+  params: Promise<{
+    id: string
+    roomId: string
+  }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string, roomId: string } }
+  context: RouteParams
 ) {
   try {
+    const params = await context.params
     const { id: hotelId, roomId } = params
     console.log('=== Starting PUT request for room ===')
     console.log('Hotel ID received:', hotelId)
@@ -67,9 +76,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string, roomId: string } }
+  context: RouteParams
 ) {
   try {
+    const params = await context.params
     const { id: hotelId, roomId } = params
     console.log('=== Starting DELETE request for room ===')
     console.log('Hotel ID received:', hotelId)

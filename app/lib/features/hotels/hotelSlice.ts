@@ -1,18 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-
-export interface Hotel {
-  id: number
-  name: string
-  description: string
-  website: string
-  country: string
-  city: string
-  location: string
-  base_price: number
-  category: number
-  created_at: string
-  updated_at: string
-}
+import { Hotel } from '@/app/lib/types/hotel'
 
 interface HotelState {
   items: Hotel[]
@@ -53,7 +40,11 @@ const hotelSlice = createSlice({
       })
       .addCase(fetchHotels.fulfilled, (state, action) => {
         state.status = 'succeeded'
-        state.items = action.payload.data
+        state.items = action.payload.data.map((hotel: Hotel) => ({
+          ...hotel,
+          seasons: hotel.seasons || [],
+          cancel_policies: hotel.cancel_policies || []
+        }))
         state.currentPage = action.payload.current_page
         state.totalPages = action.payload.last_page
         state.totalItems = action.payload.total

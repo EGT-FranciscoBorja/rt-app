@@ -1,10 +1,20 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+interface RouteParams {
+  params: Promise<{
+    id: string
+    itineraryId: string
+    priceId: string
+  }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string; itineraryId: string; priceId: string } }
+  request: NextRequest,
+  context: RouteParams
 ) {
   try {
+    const params = await context.params
     const { id: cruiseId, itineraryId, priceId } = params
     const body = await request.json()
 
