@@ -30,16 +30,24 @@ export async function PUT(
         'Accept': 'application/json',
         'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      cache: 'no-store'
     })
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error('API error:', errorText)
+      let errorMessage = 'Error al actualizar el hotel'
+      try {
+        const errorData = JSON.parse(errorText)
+        errorMessage = errorData.message || errorData.error || errorMessage
+      } catch (e) {
+        console.error('Error parsing error response:', e)
+      }
       return NextResponse.json(
         { 
           success: false,
-          message: 'Failed to update hotel',
+          message: errorMessage,
           status: response.status,
           details: errorText
         }, 
@@ -51,13 +59,25 @@ export async function PUT(
     console.log('API response:', data)
     console.log('=== End of PUT request for hotel ===')
 
+    if (!data.success) {
+      return NextResponse.json(
+        { 
+          success: false,
+          message: data.message || 'Error al actualizar el hotel',
+          details: data
+        }, 
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json({ success: true, data: data.data })
   } catch (error) {
     console.error('Error updating hotel:', error)
     return NextResponse.json(
       { 
         success: false,
-        message: error instanceof Error ? error.message : 'Error updating hotel'
+        message: error instanceof Error ? error.message : 'Error al actualizar el hotel',
+        details: error instanceof Error ? error.stack : 'Unknown error'
       },
       { status: 500 }
     )

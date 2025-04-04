@@ -131,20 +131,27 @@ export default function ListHotelsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
         },
         body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
-        throw new Error('Error updating hotel')
+        const errorData = await response.json()
+        throw new Error(errorData.message || errorData.error || 'Error al actualizar el hotel')
+      }
+
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.message || 'Error al actualizar el hotel')
       }
 
       setEditingHotel(null)
       dispatch(fetchHotels(currentPage))
     } catch (error) {
       console.error('Error updating hotel:', error)
-      alert('Error updating hotel')
+      alert('Error al actualizar el hotel: ' + (error instanceof Error ? error.message : 'Error desconocido'))
     }
   }
 

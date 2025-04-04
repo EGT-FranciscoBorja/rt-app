@@ -33,7 +33,8 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
     base_price: Number(hotel.base_price),
     category: Number(hotel.category),
     seasons: hotel.seasons || [],
-    cancel_policies: hotel.cancel_policies || []
+    cancel_policies: hotel.cancel_policies || [],
+    location: hotel.location || ''
   })
 
   useEffect(() => {
@@ -76,13 +77,19 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
     try {
       const seasonIds = editedHotel.seasons?.map(s => Number(s.id)) || []
       const cancelPolicyIds = editedHotel.cancel_policies?.map(p => Number(p.id)) || []
+      
+      if (!editedHotel.location || editedHotel.location.trim() === '') {
+        alert('La ubicación es requerida')
+        return
+      }
+
       const payload = {
         name: editedHotel.name,
         description: editedHotel.description,
         website: editedHotel.website,
         country: editedHotel.country,
         city: editedHotel.city,
-        location: editedHotel.location,
+        location: editedHotel.location.trim(),
         base_price: editedHotel.base_price,
         category: editedHotel.category,
         seasons: seasonIds,
@@ -91,7 +98,8 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
       await onSave(hotel.id, payload)
       onClose()
     } catch (error) {
-      console.error('Error saving hotel:', error)
+      console.error('Error guardando hotel:', error)
+      alert('Error al guardar el hotel: ' + (error instanceof Error ? error.message : 'Error desconocido'))
     }
   }
 
@@ -176,7 +184,12 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
                 value={editedHotel.location}
                 onChange={(e) => setEditedHotel({ ...editedHotel, location: e.target.value })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+                placeholder="Ingrese la ubicación del hotel"
               />
+              <p className="mt-1 text-sm text-gray-500">
+                Ejemplo: Av. Principal #123, Zona Centro
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Base Price</label>
