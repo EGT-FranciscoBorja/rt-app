@@ -74,8 +74,8 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const seasonIds = editedHotel.seasons.map(s => Number(s.id))
-      const cancelPolicyIds = editedHotel.cancel_policies.map(p => Number(p.id))
+      const seasonIds = editedHotel.seasons?.map(s => Number(s.id)) || []
+      const cancelPolicyIds = editedHotel.cancel_policies?.map(p => Number(p.id)) || []
       const payload = {
         name: editedHotel.name,
         description: editedHotel.description,
@@ -91,7 +91,7 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
       await onSave(hotel.id, payload)
       onClose()
     } catch (error) {
-      console.error('Error al guardar el hotel:', error)
+      console.error('Error saving hotel:', error)
     }
   }
 
@@ -101,9 +101,9 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
 
     setEditedHotel(prev => ({
       ...prev,
-      seasons: prev.seasons.some(s => s.id === seasonId)
-        ? prev.seasons.filter(s => s.id !== seasonId)
-        : [...prev.seasons, season]
+      seasons: (prev.seasons || []).some(s => s.id === seasonId)
+        ? (prev.seasons || []).filter(s => s.id !== seasonId)
+        : [...(prev.seasons || []), season]
     }))
   }
 
@@ -111,25 +111,20 @@ const EditHotelModal: React.FC<EditHotelModalProps> = ({ hotel, onClose, onSave 
     const policy = cancelPolicies.find(p => p.id === policyId)
     if (!policy) return
 
-    setEditedHotel(prev => {
-      const isSelected = prev.cancel_policies.some(p => p.id === policyId)
-      const newPolicies = isSelected
-        ? prev.cancel_policies.filter(p => p.id !== policyId)
-        : [...prev.cancel_policies, policy]
-      
-      return {
-        ...prev,
-        cancel_policies: newPolicies
-      }
-    })
+    setEditedHotel(prev => ({
+      ...prev,
+      cancel_policies: (prev.cancel_policies || []).some(p => p.id === policyId)
+        ? (prev.cancel_policies || []).filter(p => p.id !== policyId)
+        : [...(prev.cancel_policies || []), policy]
+    }))
   }
 
   const isSeasonSelected = (seasonId: number) => {
-    return editedHotel.seasons.some(s => s.id === seasonId)
+    return editedHotel.seasons?.some(s => s.id === seasonId) || false
   }
 
   const isPolicySelected = (policyId: number) => {
-    return editedHotel.cancel_policies.some(p => p.id === policyId)
+    return editedHotel.cancel_policies?.some(p => p.id === policyId) || false
   }
 
   return (

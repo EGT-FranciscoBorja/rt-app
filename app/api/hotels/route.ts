@@ -41,33 +41,26 @@ export async function GET(request: NextRequest) {
     console.log('=== Starting GET request for hotels list ===')
     console.log('Page:', page)
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel?page=${page}`
-    console.log('API URL:', apiUrl)
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/hotel?page=${page}`, {
       headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
         'Accept': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`
-      }
+      },
+      cache: 'no-store'
     })
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error('API error:', errorText)
       return NextResponse.json(
-        { 
-          success: false,
-          message: 'Failed to fetch hotels',
-          status: response.status,
-          details: errorText
-        }, 
+        { success: false, message: 'Error loading hotels' },
         { status: response.status }
       )
     }
 
     const data = await response.json()
     
-    // Asegurarse de que cada hotel tenga las propiedades seasons y cancel_policies
+    // Ensure each hotel has seasons and cancel_policies properties
     const formattedData = {
       ...data,
       data: data.data.map((hotel: Hotel) => ({
@@ -80,14 +73,16 @@ export async function GET(request: NextRequest) {
     console.log('API response processed')
     console.log('=== End of GET request for hotels list ===')
 
-    return NextResponse.json({ success: true, data: formattedData })
+    return NextResponse.json({
+      success: true,
+      message: 'Success',
+      errors: null,
+      data: formattedData.data
+    })
   } catch (error) {
     console.error('Error fetching hotels:', error)
     return NextResponse.json(
-      { 
-        success: false,
-        message: error instanceof Error ? error.message : 'Error fetching hotels'
-      },
+      { success: false, message: 'Error loading hotels' },
       { status: 500 }
     )
   }

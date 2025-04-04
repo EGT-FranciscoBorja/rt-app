@@ -166,6 +166,7 @@ interface HotelState {
     }>
   }>
   status: 'idle' | 'loading' | 'succeeded' | 'failed'
+  error: string | null
   currentPage: number
   totalPages: number
   totalItems: number

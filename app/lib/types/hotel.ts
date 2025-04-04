@@ -10,7 +10,7 @@ export interface Hotel {
   category: number
   created_at: string
   updated_at: string
-  seasons: Array<{
+  seasons?: Array<{
     id: number
     name: string
     description: string
@@ -20,7 +20,7 @@ export interface Hotel {
     created_at: string
     updated_at: string
   }>
-  cancel_policies: Array<{
+  cancel_policies?: Array<{
     id: number
     name: string
     description: string

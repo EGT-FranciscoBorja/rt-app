@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import { fetchHotels, setItems } from '@/app/lib/features/hotels/hotelSlice'
+import { 
+  fetchHotels, 
+  selectHotels, 
+  selectHotelsStatus, 
+  selectHotelsError,
+  selectHotelsPagination 
+} from '@/app/lib/features/hotels/hotelSlice'
 import { usePermissions } from '@/app/hooks/usePermissions'
 import { FaRegEdit, FaDownload, FaCloudUploadAlt, FaArrowLeft } from "react-icons/fa"
 import { RiDeleteBin6Line } from "react-icons/ri"
@@ -29,15 +35,28 @@ interface FilterValues {
   priceMax?: string
 }
 
+interface SaveHotelPayload {
+  name: string
+  description: string
+  website: string
+  country: string
+  city: string
+  location: string
+  base_price: number
+  category: number
+  seasons: number[]
+  cancel_policies: number[]
+}
+
 export default function ListHotelsPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const hotels = useAppSelector((state) => state.hotels.items) as Hotel[]
-  const status = useAppSelector((state) => state.hotels.status)
+  const hotels = useAppSelector(selectHotels)
+  const status = useAppSelector(selectHotelsStatus)
+  const error = useAppSelector(selectHotelsError)
+  const { currentPage, totalPages, totalItems } = useAppSelector(selectHotelsPagination)
   const [activeFilters, setActiveFilters] = useState<HotelFilters | null>(null)
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
   const { canEdit } = usePermissions()
 
   useEffect(() => {
@@ -46,45 +65,24 @@ export default function ListHotelsPage() {
     }
   }, [dispatch, status])
 
-  useEffect(() => {
-    if (status === 'succeeded' && hotels) {
-      const hotelsWithDefaults = hotels.map(hotel => ({
-        ...hotel,
-        seasons: hotel.seasons || [],
-        cancel_policies: hotel.cancel_policies || []
-      }))
-      dispatch(setItems(hotelsWithDefaults))
-    }
-  }, [status, hotels, dispatch])
-
   const handleApplyFilters = (filters: FilterValues) => {
     setActiveFilters(filters as HotelFilters)
-    setCurrentPage(1)
   }
 
   const filteredHotels = hotels.filter(hotel => {
     if (activeFilters) {
-      // Búsqueda por nombre (coincidencia parcial)
       if (activeFilters.name && !hotel.name.toLowerCase().includes(activeFilters.name.toLowerCase())) {
         return false
       }
-
-      // Búsqueda por país (coincidencia parcial)
       if (activeFilters.country && !hotel.country.toLowerCase().includes(activeFilters.country.toLowerCase())) {
         return false
       }
-
-      // Búsqueda por ciudad (coincidencia parcial)
       if (activeFilters.city && !hotel.city.toLowerCase().includes(activeFilters.city.toLowerCase())) {
         return false
       }
-
-      // Búsqueda por categoría (exacta)
       if (activeFilters.category && hotel.category !== parseInt(activeFilters.category)) {
         return false
       }
-
-      // Búsqueda por rango de precios
       if (activeFilters.priceMin && hotel.base_price < parseFloat(activeFilters.priceMin)) {
         return false
       }
@@ -93,21 +91,7 @@ export default function ListHotelsPage() {
       }
     }
     return true
-  }).map(hotel => ({
-    ...hotel,
-    seasons: hotel.seasons || [],
-    cancel_policies: hotel.cancel_policies || []
-  }))
-
-  // Calcular paginación basada en los resultados filtrados
-  const totalPages = Math.ceil(filteredHotels.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedHotels = filteredHotels.slice(startIndex, endIndex).map(hotel => ({
-    ...hotel,
-    seasons: hotel.seasons || [],
-    cancel_policies: hotel.cancel_policies || []
-  }))
+  })
 
   const handleEdit = (hotel: Hotel) => {
     setEditingHotel({
@@ -118,24 +102,50 @@ export default function ListHotelsPage() {
   }
 
   const handleDelete = async (hotelId: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este hotel?')) {
+      return
+    }
+
     try {
       const response = await fetch(`/api/v1/hotel/${hotelId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        }
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete hotel')
+        throw new Error('Error deleting hotel')
       }
 
-      window.location.reload()
+      dispatch(fetchHotels(currentPage))
     } catch (error) {
       console.error('Error deleting hotel:', error)
+      alert('Error deleting hotel')
     }
   }
 
-  const handleSaveEdit = async () => {
-    setEditingHotel(null)
-    window.location.reload()
+  const handleSaveEdit = async (id: number, payload: SaveHotelPayload) => {
+    try {
+      const response = await fetch(`/api/v1/hotel/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN}`,
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (!response.ok) {
+        throw new Error('Error updating hotel')
+      }
+
+      setEditingHotel(null)
+      dispatch(fetchHotels(currentPage))
+    } catch (error) {
+      console.error('Error updating hotel:', error)
+      alert('Error updating hotel')
+    }
   }
 
   return (
@@ -165,17 +175,23 @@ export default function ListHotelsPage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                 >
                   <FaCloudUploadAlt className="text-lg" />
-                  Add New Hotel
+                  Add Hotel
                 </button>
               </div>
             )}
           </div>
 
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+              {error}
+            </div>
+          )}
+
           {activeFilters && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-blue-800">Active Filters:</span>
+                  <span className="text-sm font-medium text-blue-800">Active filters:</span>
                   {Object.entries(activeFilters).map(([key, value]) => 
                     value && (
                       <span key={key} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -188,7 +204,7 @@ export default function ListHotelsPage() {
                   onClick={() => setActiveFilters(null)}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Clear all
+                  Clear filters
                 </button>
               </div>
             </div>
@@ -213,34 +229,34 @@ export default function ListHotelsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {status === 'loading' ? (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                         Loading hotels...
                       </td>
                     </tr>
                   ) : status === 'failed' ? (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-red-500">
-                        Error loading hotels
+                      <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-red-500">
+                        {error || 'Error loading hotels'}
                       </td>
                     </tr>
                   ) : !Array.isArray(hotels) || hotels.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                         No hotels available
                       </td>
                     </tr>
                   ) : filteredHotels.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={canEdit ? 7 : 6} className="px-6 py-4 text-center text-gray-500">
                         No hotels match the selected filters
                       </td>
                     </tr>
                   ) : (
-                    paginatedHotels.map((hotel) => (
+                    filteredHotels.map((hotel) => (
                       <tr key={hotel.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div 
-                            className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+                            className="text-sm font-medium text-blue-600 hover:text-blue-900 cursor-pointer"
                             onClick={() => router.push(`/hotels/${hotel.id}/rooms`)}
                           >
                             {hotel.name}
@@ -251,17 +267,21 @@ export default function ListHotelsPage() {
                           <div className="text-sm text-gray-900 line-clamp-2">{hotel.description}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <a 
-                            href={hotel.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-xs"
-                          >
-                            {hotel.website}
-                          </a>
+                          {hotel.website ? (
+                            <a 
+                              href={hotel.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-xs"
+                            >
+                              {hotel.website}
+                            </a>
+                          ) : (
+                            <span className="text-sm text-gray-500">Not available</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{hotel.location}</div>
+                          <div className="text-sm text-gray-900">{hotel.location || 'Not specified'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           ${hotel.base_price.toLocaleString()}
@@ -274,7 +294,7 @@ export default function ListHotelsPage() {
                             hotel.category === 2 ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {hotel.category}
+                            {hotel.category} stars
                           </span>
                         </td>
                         {canEdit && (
@@ -283,12 +303,14 @@ export default function ListHotelsPage() {
                               <button
                                 onClick={() => handleEdit(hotel)}
                                 className="text-blue-600 hover:text-blue-900"
+                                title="Edit hotel"
                               >
                                 <FaRegEdit className="text-lg" />
                               </button>
                               <button
                                 onClick={() => handleDelete(hotel.id)}
                                 className="text-red-600 hover:text-red-900"
+                                title="Delete hotel"
                               >
                                 <RiDeleteBin6Line className="text-lg" />
                               </button>
@@ -304,36 +326,39 @@ export default function ListHotelsPage() {
           </div>
 
           {/* Paginación */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-700">
-              Showing page {currentPage} of {totalPages}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-gray-700">
+                Showing page {currentPage} of {totalPages} ({totalItems} hotels in total)
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => dispatch(fetchHotels(currentPage - 1))}
+                  disabled={currentPage <= 1}
+                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => dispatch(fetchHotels(currentPage + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => dispatch(fetchHotels(currentPage - 1))}
-                disabled={currentPage <= 1}
-                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => dispatch(fetchHotels(currentPage + 1))}
-                disabled={currentPage >= totalPages}
-                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-        {editingHotel && (
-          <EditHotelModal
-            hotel={editingHotel}
-            onClose={() => setEditingHotel(null)}
-            onSave={handleSaveEdit}
-          />
-        )}
       </div>
+
+      {editingHotel && (
+        <EditHotelModal
+          hotel={editingHotel}
+          onClose={() => setEditingHotel(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   )
 }
